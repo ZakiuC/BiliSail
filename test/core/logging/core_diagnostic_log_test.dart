@@ -18,6 +18,21 @@ void main() {
     await directory.delete(recursive: true);
   });
 
+  Future<File> singleLogFile() {
+    return directory
+        .list()
+        .where((entity) => entity is File)
+        .cast<File>()
+        .single;
+  }
+
+  Future<List<Map<String, Object?>>> readEvents() async {
+    final lines = await (await singleLogFile()).readAsLines();
+    return lines
+        .map((line) => jsonDecode(line) as Map<String, Object?>)
+        .toList(growable: false);
+  }
+
   test(
     'core errors retain categories and safe locations, never raw secrets',
     () async {
@@ -75,6 +90,107 @@ void main() {
     expect(lines[1], contains('"failure":"timeout"'));
     expect(lines[2], contains('sessionChanged'));
     expect(lines.join(), isNot(contains('SECRET')));
+  });
+
+  test(
+    'play info resolution records safe fields and allowed sources',
+    () async {
+      final log = CoreDiagnosticLog(directory);
+      log.record(
+        CoreDiagnosticEvent.playInfoResolved,
+        requestedQuality: 127,
+        selectedQuality: 116,
+        videoQualities: <Object?>[127, '120', 0, -1, 116.0, 116],
+        audioQualities: <Object?>[30280, 30232],
+        playSource: 'web',
+      );
+      log.record(CoreDiagnosticEvent.playInfoResolved, playSource: 'app');
+      log.record(CoreDiagnosticEvent.playInfoResolved, playSource: 'merged');
+      await log.close();
+
+      final events = await readEvents();
+      expect(events, hasLength(3));
+      expect(events[0]['event'], 'playInfoResolved');
+      expect(events[0]['requestedQuality'], 127);
+      expect(events[0]['selectedQuality'], 116);
+      expect(events[0]['videoQualities'], [127, 116]);
+      expect(events[0]['audioQualities'], [30280, 30232]);
+      expect(events.map((event) => event['playSource']), [
+        'web',
+        'app',
+        'merged',
+      ]);
+    },
+  );
+
+  test(
+    'play info resolution filters invalid values and bounds lists',
+    () async {
+      final log = CoreDiagnosticLog(directory);
+      const unsafeSource =
+          'https://cdn.test/BV1SECRET?account=SECRET&token=SECRET';
+      log.record(
+        CoreDiagnosticEvent.playInfoResolved,
+        requestedQuality: 0,
+        selectedQuality: -116,
+        videoQualities: <Object?>[
+          0,
+          -1,
+          '127',
+          127.0,
+          false,
+          null,
+          for (var quality = 1; quality <= 40; quality++) quality,
+        ],
+        audioQualities: <Object?>[
+          for (var quality = 1; quality <= 40; quality++) 30000 + quality,
+        ],
+        playSource: unsafeSource,
+      );
+      log.record(
+        CoreDiagnosticEvent.playInfoResolved,
+        videoQualities: <Object?>[0, -1, '116'],
+        audioQualities: <Object?>[],
+        playSource: 'WEB',
+      );
+      await log.close();
+
+      final text = await (await singleLogFile()).readAsString();
+      final events = await readEvents();
+      expect(events, hasLength(2));
+      expect(events[0].containsKey('requestedQuality'), isFalse);
+      expect(events[0].containsKey('selectedQuality'), isFalse);
+      expect(events[0].containsKey('playSource'), isFalse);
+      expect(
+        events[0]['videoQualities'],
+        List.generate(32, (index) => index + 1),
+      );
+      expect(
+        events[0]['audioQualities'],
+        List.generate(32, (index) => 30001 + index),
+      );
+      expect(events[1]['videoQualities'], isEmpty);
+      expect(events[1]['audioQualities'], isEmpty);
+      expect(events[1].containsKey('playSource'), isFalse);
+      expect(text, isNot(contains('BV1SECRET')));
+      expect(text, isNot(contains('SECRET')));
+    },
+  );
+
+  test('omitted play info fields preserve the existing event shape', () async {
+    final log = CoreDiagnosticLog(directory);
+    log.record(CoreDiagnosticEvent.ready);
+    log.record(CoreDiagnosticEvent.playInfoResolved);
+    await log.close();
+
+    final events = await readEvents();
+    expect(events.map((event) => event['event']), [
+      'ready',
+      'playInfoResolved',
+    ]);
+    for (final event in events) {
+      expect(event.keys, ['time', 'event']);
+    }
   });
 
   test(

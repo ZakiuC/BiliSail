@@ -15,6 +15,7 @@ enum CoreDiagnosticEvent {
   frameworkError,
   unhandledError,
   requestFinished,
+  playInfoResolved,
   sessionChanged,
   downloadState,
   downloadMediaScan,
@@ -61,6 +62,11 @@ final class CoreDiagnosticLog {
     int? failed,
     String? mediaFormat,
     String? mediaScanResult,
+    int? requestedQuality,
+    int? selectedQuality,
+    List<Object?>? videoQualities,
+    List<Object?>? audioQualities,
+    String? playSource,
   }) {
     _writer.record({
       'time': DateTime.now().toUtc().toIso8601String(),
@@ -72,11 +78,31 @@ final class CoreDiagnosticLog {
       'failed': ?failed,
       'mediaFormat': ?mediaFormat,
       'mediaScanResult': ?mediaScanResult,
+      'requestedQuality': ?_positiveQuality(requestedQuality),
+      'selectedQuality': ?_positiveQuality(selectedQuality),
+      'videoQualities': ?_qualityList(videoQualities),
+      'audioQualities': ?_qualityList(audioQualities),
+      'playSource': ?_safePlaySource(playSource),
       if (error != null) 'errorType': _safeType(error),
       if (error is AppFailure) 'failure': error.kind.name,
       if (stack != null) 'stack': _safeStack(stack),
     });
   }
+
+  static int? _positiveQuality(int? quality) =>
+      quality != null && quality > 0 ? quality : null;
+
+  static List<int>? _qualityList(List<Object?>? qualities) {
+    if (qualities == null) return null;
+    return qualities
+        .whereType<int>()
+        .where((quality) => quality > 0)
+        .take(32)
+        .toList(growable: false);
+  }
+
+  static String? _safePlaySource(String? playSource) =>
+      const {'web', 'app', 'merged'}.contains(playSource) ? playSource : null;
 
   static String _safeType(Object error) {
     final type = error.runtimeType.toString();

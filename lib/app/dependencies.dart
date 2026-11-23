@@ -117,6 +117,7 @@ import '../features/playback/data/api_video_preview_repository.dart';
 import '../features/playback/data/api_playback_history_repository.dart';
 import '../features/playback/data/api_content_playback_repository.dart';
 import '../features/playback/data/playback_enhancement_policy.dart';
+import '../features/playback/data/app_play_info_provider.dart';
 import '../features/pgc/application/pgc_controller.dart';
 import '../features/pgc/application/pgc_follow_controller.dart';
 import '../features/pgc/data/api_pgc_follow_repository.dart';
@@ -347,6 +348,22 @@ class AppDependencies {
       );
     }
 
+    final appPlayInfo = AppPlayInfoSource(
+      api,
+      requests,
+      loadIdentity: () async {
+        final value = await dependencies.appRecommendationIdentity
+            .requestIdentity();
+        return (
+          buvid: value.buvid,
+          accessToken: value.accessToken,
+          revision: value.revision,
+        );
+      },
+      identityRevision: () => dependencies.appRecommendationIdentity.revision,
+      invalidateIdentity: () =>
+          dependencies.appRecommendationIdentity.invalidateAuthorization(),
+    );
     final playbackRepository = ApiPlaybackRepository(
       api,
       requests,
@@ -354,6 +371,7 @@ class AppDependencies {
       audioQualityPreference: audioQualityPreference,
       avoidHdrPreference: avoidHdrPreference,
       enhancementPolicy: enhancementPolicy,
+      appPlayInfo: appPlayInfo,
       imageDimensions: images.dimensions,
     );
     final downloadSources = ApiDownloadSourceRepository(

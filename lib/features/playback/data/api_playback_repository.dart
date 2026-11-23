@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:bili_api/bili_api.dart';
 
+import '../../../core/logging/core_diagnostic_log.dart';
 import '../../../core/network/api_requests.dart';
 import '../../../core/storage/image_byte_cache.dart';
 import '../../../domain/request_cancellation.dart';
@@ -13,6 +14,8 @@ import '../../../domain/app_failure.dart';
 import '../domain/playback_repository.dart';
 import '../domain/high_energy_trend.dart';
 import 'high_energy_cache.dart';
+import 'app_play_info_provider.dart';
+import 'play_info_merge.dart';
 import 'dash_media_selection.dart';
 import 'playback_enhancement_policy.dart';
 
@@ -30,6 +33,7 @@ class ApiPlaybackRepository
     this.audioQualityPreference,
     this.avoidHdrPreference,
     this.enhancementPolicy,
+    this.appPlayInfo,
     this.imageDimensions,
   });
   final BiliApiClient api;
@@ -38,6 +42,7 @@ class ApiPlaybackRepository
   final Future<AudioQualityPreference> Function()? audioQualityPreference;
   final Future<bool> Function()? avoidHdrPreference;
   final Future<PlaybackEnhancementPolicy> Function()? enhancementPolicy;
+  final AppPlayInfoProvider? appPlayInfo;
   final Future<({int width, int height})> Function(Uri)? imageDimensions;
   late final _highEnergyCache = HighEnergyCache(requests);
 
@@ -241,18 +246,58 @@ class ApiPlaybackRepository
     final enhancements =
         await enhancementPolicy?.call() ?? PlaybackEnhancementPolicy.disabled;
     // Discover the full entitled DASH ladder before applying the preference.
-    // Some responses omit a lower representation until it is requested alone.
-    var info = await api.getPlayInfo(
-      video.value,
-      cid,
-      qn: 129,
-      language: voice.languageCode,
-      productionType: voice.productionType,
-      unlockHighestBitrate: enhancements.unlockHighestBitrate,
-      unlimitedQualityTrial: enhancements.unlimitedQualityTrial,
-      context: context,
-    );
-    if (!enhancements.unlockHighestBitrate &&
+    // Explicit 8K must not be translated to the HDR discovery tier 129.
+    final app = appPlayInfo;
+    final useApp =
+        app != null &&
+        (quality > 80 ||
+            enhancements.unlockHighestBitrate ||
+            enhancements.unlimitedQualityTrial);
+    late ApiPlayInfo info;
+    var playSource = 'web';
+    try {
+      info = await api.getPlayInfo(
+        video.value,
+        cid,
+        qn: quality == 127 ? 127 : 129,
+        language: voice.languageCode,
+        productionType: voice.productionType,
+        unlockHighestBitrate: enhancements.unlockHighestBitrate,
+        unlimitedQualityTrial: enhancements.unlimitedQualityTrial,
+        context: context,
+      );
+    } on ApiFailure catch (failure) {
+      if (app == null ||
+          !useApp ||
+          !const {
+            ApiFailureCategory.permission,
+            ApiFailureCategory.unavailable,
+          }.contains(failure.category)) {
+        rethrow;
+      }
+      try {
+        final candidate = await app.resolve(
+          bvid: video.value,
+          cid: cid,
+          quality: enhancements.unlockHighestBitrate ? 127 : quality,
+          language: voice.languageCode,
+          productionType: voice.productionType,
+          unlimitedQualityTrial: enhancements.unlimitedQualityTrial,
+          context: context,
+        );
+        if (candidate.isPreview) rethrow;
+        info = candidate;
+        playSource = 'app';
+      } on ApiFailure catch (appFailure) {
+        if (appFailure.category == ApiFailureCategory.cancelled) rethrow;
+        throw failure;
+      } on AppFailure catch (appFailure) {
+        if (appFailure.kind == AppFailureKind.cancelled) rethrow;
+        throw failure;
+      }
+    }
+    if (playSource == 'web' &&
+        !enhancements.unlockHighestBitrate &&
         info.dashVideo.any((track) => track.id > quality) &&
         info.acceptQuality.contains(quality) &&
         !info.dashVideo.any((track) => track.id == quality)) {
@@ -268,25 +313,7 @@ class ApiPlaybackRepository
         );
         if (supplement.currentLanguage == info.currentLanguage &&
             supplement.productionType == info.productionType) {
-          final identities = {
-            for (final track in info.dashVideo) (track.id, track.codecs),
-          };
-          info = ApiPlayInfo(
-            duration: info.duration,
-            dashVideo: List.unmodifiable([
-              ...info.dashVideo,
-              for (final track in supplement.dashVideo)
-                if (identities.add((track.id, track.codecs))) track,
-            ]),
-            dashAudio: info.dashAudio,
-            isIntentionallySilent: info.isIntentionallySilent,
-            acceptQuality: info.acceptQuality,
-            loudness: info.loudness,
-            voices: info.voices,
-            currentLanguage: info.currentLanguage,
-            productionType: info.productionType,
-            isPreview: info.isPreview,
-          );
+          info = mergeApiPlayInfo(info, supplement);
         }
       } on ApiFailure catch (failure) {
         // The discovery response already contains complete playable media.
@@ -295,6 +322,28 @@ class ApiPlaybackRepository
             failure.category == ApiFailureCategory.authentication) {
           rethrow;
         }
+      }
+    }
+    if (app != null && useApp && playSource == 'web') {
+      try {
+        final supplement = await app.resolve(
+          bvid: video.value,
+          cid: cid,
+          quality: enhancements.unlockHighestBitrate ? 127 : quality,
+          language: voice.languageCode,
+          productionType: voice.productionType,
+          unlimitedQualityTrial: enhancements.unlimitedQualityTrial,
+          context: context,
+        );
+        final merged = mergeApiPlayInfo(info, supplement);
+        if (!identical(merged, info)) playSource = 'merged';
+        info = merged;
+      } on ApiFailure catch (failure) {
+        if (failure.category == ApiFailureCategory.cancelled) rethrow;
+        // A complete Web response remains usable when optional App reads fail.
+      } on AppFailure catch (failure) {
+        if (failure.kind == AppFailureKind.cancelled) rethrow;
+        // Expired or unavailable App identity must not discard Web playback.
       }
     }
     if (!voice.isOriginal &&
@@ -307,7 +356,7 @@ class ApiPlaybackRepository
             ))) {
       throw const AppFailure(AppFailureKind.playback, '所选语音暂不可用，请切回原声');
     }
-    return selectDashMedia(
+    final media = selectDashMedia(
       info,
       audioQuality:
           await audioQualityPreference?.call() ?? AudioQualityPreference.aac192,
@@ -322,6 +371,15 @@ class ApiPlaybackRepository
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/132.0.0.0 Safari/537.36',
       },
     );
+    requests.diagnostics?.record(
+      CoreDiagnosticEvent.playInfoResolved,
+      playSource: playSource,
+      requestedQuality: quality,
+      selectedQuality: media.quality,
+      videoQualities: info.dashVideo.map((track) => track.id).toList(),
+      audioQualities: info.dashAudio.map((track) => track.id).toList(),
+    );
+    return media;
   }, cancellation: cancellation);
 
   @override

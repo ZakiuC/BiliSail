@@ -98,15 +98,21 @@ final class BiliApiClient {
       endpoint: 'app_device',
     );
     check();
-    final value =
-        await (loadAppDevice?.call() ?? Future.value(const AppDeviceInfo()))
-            .timeout(
-              active.deadline!.difference(_clock()),
-              onTimeout: () => throw const ApiFailure(
-                ApiFailureCategory.timeout,
-                'app_device',
-              ),
-            );
+    final cancellation = active.cancellation;
+    final value = await Future.any<AppDeviceInfo>([
+      (loadAppDevice?.call() ?? Future.value(const AppDeviceInfo())).timeout(
+        active.deadline!.difference(_clock()),
+        onTimeout: () =>
+            throw const ApiFailure(ApiFailureCategory.timeout, 'app_device'),
+      ),
+      if (cancellation != null)
+        cancellation.whenCancelled.then<AppDeviceInfo>(
+          (_) => throw const ApiFailure(
+            ApiFailureCategory.cancelled,
+            'app_device',
+          ),
+        ),
+    ]);
     check();
     return value;
   }
@@ -327,7 +333,8 @@ final class BiliApiClient {
       '/x/passport-tv-login/qrcode/poll',
     };
     final passport = passportPaths.contains(path);
-    if (!passport && !feedPaths.contains(path)) {
+    final playback = path == '/x/player/playurl';
+    if (!passport && !feedPaths.contains(path) && !playback) {
       throw ArgumentError('Unsupported App destination');
     }
     if (!RegExp(r'^[A-Za-z0-9_-]{16,128}$').hasMatch(buvid)) {
@@ -373,7 +380,11 @@ final class BiliApiClient {
         ),
     };
     final uri = Uri.https(
-      passport ? 'passport.bilibili.com' : 'app.bilibili.com',
+      passport
+          ? 'passport.bilibili.com'
+          : playback
+          ? 'api.bilibili.com'
+          : 'app.bilibili.com',
       path,
     );
     _riskControl.check(uri, endpoint, epoch, _clock());
