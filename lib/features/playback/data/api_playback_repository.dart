@@ -378,8 +378,13 @@ class ApiPlaybackRepository
     // answer 403 at the CDN. Probe once and fall back to 1080P instead of
     // letting the player fail to open the source.
     var probeStatus = 0;
-    if (media.quality > 80) {
-      final status = await api.probeMediaStatus(media.video.urls.first);
+    // Only App-sourced tiers can be entitlement-invalid; Web tracks are the
+    // long-standing path and must not gain an extra request.
+    if (media.quality > 80 && playSource != 'web') {
+      final status = await api.probeMediaStatus(
+        media.video.urls.first,
+        headers: headers,
+      );
       probeStatus = status ?? 0;
       // null means the probe itself was inconclusive; keep the higher tier.
       if (status != null && status != 200 && status != 206) {

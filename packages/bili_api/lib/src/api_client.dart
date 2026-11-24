@@ -185,6 +185,7 @@ final class BiliApiClient {
   /// possible; callers must treat null as "unknown", never as success.
   Future<int?> probeMediaStatus(
     Uri url, {
+    Map<String, String> headers = const {},
     Duration timeout = const Duration(seconds: 6),
   }) async {
     if (url.scheme != 'https' ||
@@ -196,7 +197,9 @@ final class BiliApiClient {
     try {
       final response = await _transport.get(
         url,
-        headers: const {'Range': 'bytes=0-1', 'Accept': '*/*'},
+        // Mirror the player's headers: a CDN that rejects the probe would
+        // otherwise look unplayable even when the real request succeeds.
+        headers: {...headers, 'Range': 'bytes=0-1', 'Accept': '*/*'},
         timeout: timeout,
       );
       return response.statusCode;
