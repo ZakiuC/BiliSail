@@ -219,10 +219,13 @@ jobs:
           if ($bundleHash -ne $env:RELEASE_BUNDLE_DIGEST) { throw 'Release bundle SHA-256 does not match the uploaded artifact.' }
           "$bundleHash  $bundleName" | Set-Content -LiteralPath "$bundlePath.sha256" -Encoding utf8
           $assets += @($bundlePath, "$bundlePath.sha256")
-          $notes = @"
+          $header = @"
           BiliSail（哔帆）$env:RELEASE_VERSION 预览构建。
 
           国内下载：[夸克网盘](https://pan.quark.cn/s/ffceda8afc83)。
+          "@
+          $signature = @"
+          ## 签名与构建
 
           - 源码提交：$env:GITHUB_SHA
           - Flutter 3.50.1；各平台 SDK、签名信息及 mux 源码归档见 [Actions 构建记录]($env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID) 中所列的来源构建产物。
@@ -235,6 +238,35 @@ jobs:
           - Linux x64 提供 AppImage 与 Flatpak。AppImage 基线为 Ubuntu 24.04，Flatpak 使用 Freedesktop 25.08 runtime；图形使用 X11／XWayland，登录需可用的系统 Secret Service。
           - 构建成功不等于各平台播放验收；正式分发前仍需完成签名、资源许可和设备验证。
           "@
+
+          # 取 CHANGELOG.md 中与本次版本同名的 "## x.y.z+N" 小节。缺失时只省略该节，
+          # 不让说明拼装失败阻塞已经上传完成的产物。
+          $workspace = $env:GITHUB_WORKSPACE
+          if (!$workspace) { $workspace = (Get-Location).Path }
+          $changelogPath = Join-Path $workspace 'CHANGELOG.md'
+          $versionBody = ''
+          if (Test-Path -LiteralPath $changelogPath -PathType Leaf) {
+            $lines = @(Get-Content -LiteralPath $changelogPath -Encoding utf8)
+            $heading = '## ' + $env:RELEASE_VERSION
+            $start = -1
+            for ($i = 0; $i -lt $lines.Count; $i++) {
+              if ($lines[$i].TrimEnd() -ceq $heading) { $start = $i + 1; break }
+            }
+            if ($start -ge 0) {
+              $section = @()
+              for ($i = $start; $i -lt $lines.Count; $i++) {
+                if ($lines[$i] -match '^##\s') { break }
+                $section += $lines[$i]
+              }
+              $versionBody = ($section -join "`n").Trim()
+            }
+          }
+          if (!$versionBody) {
+            Write-Host "CHANGELOG.md has no section for $env:RELEASE_VERSION; release notes omit it."
+          }
+          $notes = $header
+          if ($versionBody) { $notes = $notes + "`n`n## 版本说明`n`n" + $versionBody }
+          $notes = $notes + "`n`n" + $signature
           $notes | Set-Content release-notes.md -Encoding utf8
           gh release create $tag @assets THIRD_PARTY_NOTICES.md --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title "BiliSail $env:RELEASE_VERSION preview" --notes-file release-notes.md --draft --prerelease
           if ($LASTEXITCODE -ne 0) { throw 'Creating the release draft failed.' }
