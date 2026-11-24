@@ -159,6 +159,7 @@
      Release 草稿说明，其后接签名与构建信息。发布工作流只写渠道与签名，不要在 workflow 里重复写更新内容。
      小节缺失时说明会省略该节而不会中断发布，但这视为漏写，应在发布前补上。
 - 推送到分支会由 `auto-release-preview.yml` 自动分发 **Release preview**，直接产出安装包与发布草稿；
+  自动分发默认只构建 **Android 与 Windows**，macOS／iOS／Linux 需手动触发 Release preview 并勾选。
   CI 只在 PR 与手动触发时运行。若 `v<version>` tag 已存在，自动分发会跳过并输出 notice，
   此时必须递增版本号后再推送。
 - 只改文档、注释或不影响产物的提交可以不升版本，但要在提交说明里写明未升版原因
