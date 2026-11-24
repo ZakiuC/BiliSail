@@ -1,6 +1,6 @@
 # Windows ARM64 黑屏与 MDK 过期提示
 
-日期：2026-11-10。基线 master `d66a8fc9`，关联 [issue #100](https://github.com/CKopoer/BiliSail/issues/100)。
+日期：2026-11-10。基线 master `d66a8fc9`，关联 [issue #100](https://github.com/ZakiuC/BiliSail/issues/100)。
 
 ## 证据与定位边界
 
@@ -8,7 +8,7 @@ Surface Pro X / SQ1 用户确认上一轮构建不再闪退，但 media_kit 播�
 
 需要区分解码与渲染：[video_decoder_configuration.dart](../../packages/bili_player/lib/src/video_decoder_configuration.dart) 的软件解码设置 `hwdec=no`，同时保留 GPU 渲染，这是正常的职责划分，不能单凭这一点认定存在缺陷。锁定媒体依赖的 `VideoOutput::Initialize()` 在 ANGLE／OpenGL 初始化失败时转为软件渲染。黑屏可能出在解码、渲染或最终纹理呈现；目前没有证据证明是哪一环，也没有证据证明所有 Windows ARM64 设备都需要软件输出。
 
-fvp 是另一个问题：[用户扫码结果](https://github.com/CKopoer/BiliSail/issues/100#issuecomment-6745591641)明确为 `MDK SDK is outdated`。应用虽调用插件的 `registerWith` 安装原 bundled Flutter key，但 ARM64 仍固定旧 MDK v0.39.0 完整 SDK；SDK 自身的过期提示不会因 libmpv 修复而消失。
+fvp 是另一个问题：[用户扫码结果](https://github.com/ZakiuC/BiliSail/issues/100#issuecomment-6745591641)明确为 `MDK SDK is outdated`。应用虽调用插件的 `registerWith` 安装原 bundled Flutter key，但 ARM64 仍固定旧 MDK v0.39.0 完整 SDK；SDK 自身的过期提示不会因 libmpv 修复而消失。
 
 ## 当前变更
 

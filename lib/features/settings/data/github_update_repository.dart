@@ -52,7 +52,7 @@ final class GitHubUpdateRepository implements AppUpdateRepository {
     try {
       return await (() async {
         final request = await client.getUrl(
-          Uri.https('api.github.com', '/repos/CKopoer/BiliSail/releases', {
+          Uri.https('api.github.com', '/repos/ZakiuC/BiliSail/releases', {
             'per_page': '100',
           }),
         );
@@ -147,7 +147,7 @@ final class GitHubUpdateRepository implements AppUpdateRepository {
             url.hasFragment ||
             url.pathSegments.length != 5 ||
             url.pathSegments.take(4).join('/') !=
-                'CKopoer/BiliSail/releases/tag' ||
+                'ZakiuC/BiliSail/releases/tag' ||
             url.pathSegments.last != tag) {
           throw const FormatException();
         }

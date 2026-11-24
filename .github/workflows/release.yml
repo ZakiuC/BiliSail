@@ -222,7 +222,7 @@ jobs:
           $header = @"
           BiliSail（哔帆）$env:RELEASE_VERSION 预览构建。
 
-          国内下载：[夸克网盘](https://pan.quark.cn/s/ffceda8afc83)。
+          国内下载：[夸克网盘](https://pan.quark.cn/s/01686a145ba2)（提取码：cPPC）。
           "@
           $signature = @"
           ## 签名与构建

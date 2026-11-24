@@ -1,6 +1,6 @@
 # 缓冲充足时的播放冻结检测（#83）
 
-日期：2026-11-06。反馈：[issue #83](https://github.com/CKopoer/BiliSail/issues/83)，Windows 11／GTX 1070、发布版 1.2.6+5。长视频的 position 停止，缓存仍领先 94–300 秒，`desiredPlaying=true`、`buffering=false`，没有自动恢复。
+日期：2026-11-06。反馈：[issue #83](https://github.com/ZakiuC/BiliSail/issues/83)，Windows 11／GTX 1070、发布版 1.2.6+5。长视频的 position 停止，缓存仍领先 94–300 秒，`desiredPlaying=true`、`buffering=false`，没有自动恢复。
 
 ## 定位结论
 

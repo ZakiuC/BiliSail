@@ -2,26 +2,26 @@
   <img src="assets/branding/app_icon.png" width="144" height="144" alt="BiliSail 哔帆应用图标">
 </p>
 
-<h1 align="center">BiliSail · 哔帆</h1>
+<h1 align="center">BiliSail · 哔帆（高画质增强版）</h1>
 
 <p align="center">
-  专注观看体验的跨平台 Bilibili 第三方客户端<br>
+  专注观看体验的跨平台 Bilibili 第三方客户端，完整接入官方 App 高画质链路<br>
   基于 Flutter 与 Dart，面向 Windows、Android、macOS、iOS 和 Linux
 </p>
 
 <p align="center">
-  <a href="https://github.com/CKopoer/BiliSail/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/CKopoer/BiliSail/ci.yml?label=CI" alt="CI 状态"></a>
-  <a href="pubspec.yaml"><img src="https://img.shields.io/badge/dynamic/yaml?url=https%3A%2F%2Fraw.githubusercontent.com%2FCKopoer%2FBiliSail%2Fmaster%2Fpubspec.yaml&amp;query=%24.version&amp;label=version&amp;color=fb7299" alt="源码版本（pubspec.yaml）"></a>
-  <a href="https://github.com/CKopoer/BiliSail/releases"><img src="https://img.shields.io/github/v/release/CKopoer/BiliSail?include_prereleases&amp;sort=date&amp;label=release&amp;color=fb7299" alt="最新公开发布版本（含预发布）"></a>
+  <a href="https://github.com/ZakiuC/BiliSail/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/ZakiuC/BiliSail/ci.yml?label=CI" alt="CI 状态"></a>
+  <a href="pubspec.yaml"><img src="https://img.shields.io/badge/dynamic/yaml?url=https%3A%2F%2Fraw.githubusercontent.com%2FZakiuC%2FBiliSail%2Fmaster%2Fpubspec.yaml&amp;query=%24.version&amp;label=version&amp;color=fb7299" alt="源码版本（pubspec.yaml）"></a>
+  <a href="https://github.com/ZakiuC/BiliSail/releases"><img src="https://img.shields.io/github/v/release/ZakiuC/BiliSail?include_prereleases&amp;sort=date&amp;label=release&amp;color=fb7299" alt="最新公开发布版本（含预发布）"></a>
   <a href="docs/validation/ci-cd.md"><img src="https://img.shields.io/badge/Flutter-3.50.1-02569B?logo=flutter&amp;logoColor=white" alt="Flutter 3.50.1"></a>
-  <a href="https://github.com/CKopoer/BiliSail/stargazers"><img src="https://img.shields.io/github/stars/CKopoer/BiliSail?style=flat" alt="GitHub Stars"></a>
-  <a href="https://github.com/CKopoer/BiliSail/forks"><img src="https://img.shields.io/github/forks/CKopoer/BiliSail?style=flat" alt="GitHub Forks"></a>
+  <a href="https://github.com/ZakiuC/BiliSail/stargazers"><img src="https://img.shields.io/github/stars/ZakiuC/BiliSail?style=flat" alt="GitHub Stars"></a>
+  <a href="https://github.com/ZakiuC/BiliSail/forks"><img src="https://img.shields.io/github/forks/ZakiuC/BiliSail?style=flat" alt="GitHub Forks"></a>
 </p>
 
 <p align="center">
   <a href="#下载与安装">下载与安装</a> ·
   <a href="docs/README.md">项目文档</a> ·
-  <a href="https://github.com/CKopoer/BiliSail/issues">问题反馈</a> ·
+  <a href="https://github.com/ZakiuC/BiliSail/issues">问题反馈</a> ·
   <a href="#参与贡献">参与贡献</a>
 </p>
 
@@ -29,17 +29,31 @@
 
 BiliSail（哔帆）以视频、影视和直播观看为核心，提供双／多标签浏览、原生播放、弹幕、云端观看历史与本地续播，以及下载队列和离线播放。晴湾界面采用桌面分组侧栏与窄屏四项底部导航，结合自适应网格、视频卡片悬停预览、播放详情分栏和可配置快捷键。
 
+本仓库是 [CKopoer/BiliSail](https://github.com/CKopoer/BiliSail) 的增强分支：在保持上游架构与约定不变的前提下，接入官方 App `PlayViewUnite` 协议，使非会员账号也能通过试用机制取得 4K／1080P 高码率流（已在 Android 实机验证 4K AV1 硬解播放）。
+
+## 本分支的增强
+
+- **4K／高码率播放**：取流优先走官方 App `PlayViewUnite` gRPC 协议；HD 客户端身份被服务端限档时自动切换手机端身份重试；播放地址按签名来源使用对应请求头（App 地址不带 Referer），并在起播前探测可用性，被拒时自动回落 1080P。
+- **避开 HDR／杜比视界**：一键跳过 HDR 与 Dolby Vision 轨道，选择最高 SDR 档位，减少偏色与耗电。
+- **CDN 一键优选**：测速完成后可一键应用最快的 CDN 线路。
+- **番剧地区解锁**：支持自建解析服务器（港澳／台湾／东南亚／大陆）在官方详情或取流被地区拒绝时回退，默认不发送账号凭据。
+- **伪装 Wi-Fi**：App 身份请求与新直播间网络默认画质按 Wi-Fi 声明，不修改真实网络。
+- **诊断增强**：脱敏日志记录取流来源（web/app）、协议、音视频档位与探测状态码，便于排查画质问题。
+
+高画质可用性最终取决于片源与账号权益；本分支不伪造会员状态，仅使用官方试用机制与正确的客户端协议。
+
 ## 使用声明
 
 本应用是哔哩哔哩第三方客户端，视频、影视、直播及相关内容均来自哔哩哔哩，与官方无隶属关系。
 
 本程序仅供学习交流与编程技术研究使用。
 
-如果侵犯了您的合法权益，请及时联系开发者，我们会第一时间处理并删除相关内容。可通过[项目问题反馈](https://github.com/CKopoer/BiliSail/issues)联系我们。
+如果侵犯了您的合法权益，请及时联系开发者，我们会第一时间处理并删除相关内容。可通过[项目问题反馈](https://github.com/ZakiuC/BiliSail/issues)联系我们。
 
 ## 目录
 
 - [使用声明](#使用声明)
+- [本分支的增强](#本分支的增强)
 - [功能概览](#功能概览)
 - [平台与开发状态](#平台与开发状态)
 - [下载与安装](#下载与安装)
@@ -87,21 +101,22 @@ BiliSail（哔帆）以视频、影视和直播观看为核心，提供双／多
 
 ## 下载与安装
 
-安装包入口：[最新正式版](https://github.com/CKopoer/BiliSail/releases/latest) · [全部版本（含预发布）](https://github.com/CKopoer/BiliSail/releases)。
+安装包入口：[最新正式版](https://github.com/ZakiuC/BiliSail/releases/latest) · [全部版本（含预发布）](https://github.com/ZakiuC/BiliSail/releases) ·
+[夸克网盘](https://pan.quark.cn/s/01686a145ba2)（提取码：cPPC）。
 
-下表由 Release 发布后自动读取附件并更新，无需手动修改版本号，安装包保留原有文件名。预发布版、各安装包的 SHA-256 校验文件与构建信息见 [Releases](https://github.com/CKopoer/BiliSail/releases)。实际可下载平台以该版本附件为准；也可按[源码运行说明](#从源码运行)自行构建。
+推送到本仓库会自动构建 Android / Windows / macOS 安装包并创建 Release 草稿（iOS / Linux 可在 Actions 手动勾选构建）。下表由 Release 发布后自动读取附件并更新，无需手动修改版本号。各安装包的 SHA-256 校验文件与构建信息见 [Releases](https://github.com/ZakiuC/BiliSail/releases)；也可按[源码运行说明](#从源码运行)自行构建。
 
 <!-- release-downloads:start -->
-下载版本：[v1.3.0+6](https://github.com/CKopoer/BiliSail/releases/tag/v1.3.0%2B6)。
+下载版本：[v1.3.0+6](https://github.com/ZakiuC/BiliSail/releases/tag/v1.3.0%2B6)。
 
 | 平台 | 最新正式版下载 | 安装说明 |
 | --- | --- | --- |
-| Windows x64 | [EXE](https://github.com/CKopoer/BiliSail/releases/download/v1.3.0%2B6/BiliSail-1.3.0%2B6-windows-x64.exe) / [MSI](https://github.com/CKopoer/BiliSail/releases/download/v1.3.0%2B6/BiliSail-1.3.0%2B6-windows-x64.msi) / [MSIX](https://github.com/CKopoer/BiliSail/releases/download/v1.3.0%2B6/BiliSail-1.3.0%2B6-windows-x64.msix) / [证书 CER](https://github.com/CKopoer/BiliSail/releases/download/v1.3.0%2B6/BiliSail-1.3.0%2B6-windows-x64.cer) | 使用msix安装时，需要先信任对应证书；具体步骤见 [MSIX 签名与安装](docs/validation/ci-cd.md#windows-msix-签名与安装) |
-| Windows ARM64 | [EXE](https://github.com/CKopoer/BiliSail/releases/download/v1.3.0%2B6/BiliSail-1.3.0%2B6-windows-arm64.exe) / [MSI](https://github.com/CKopoer/BiliSail/releases/download/v1.3.0%2B6/BiliSail-1.3.0%2B6-windows-arm64.msi) / [MSIX](https://github.com/CKopoer/BiliSail/releases/download/v1.3.0%2B6/BiliSail-1.3.0%2B6-windows-arm64.msix) / [证书 CER](https://github.com/CKopoer/BiliSail/releases/download/v1.3.0%2B6/BiliSail-1.3.0%2B6-windows-arm64.cer) | 新增 CI 构建目标；已发布版本不会自动补齐该架构 |
-| Android arm64 | [APK](https://github.com/CKopoer/BiliSail/releases/download/v1.3.0%2B6/BiliSail-1.3.0%2B6-android-arm64.apk) | 固定 release 密钥，跨签名切换与覆盖升级说明见 [Android 签名](docs/validation/ci-cd.md#android-固定签名与覆盖升级) |
-| macOS arm64 / Intel x64 | [Apple Silicon DMG](https://github.com/CKopoer/BiliSail/releases/download/v1.3.0%2B6/BiliSail-1.3.0%2B6-macos-arm64.dmg) / [Intel x64 DMG](https://github.com/CKopoer/BiliSail/releases/download/v1.3.0%2B6/BiliSail-1.3.0%2B6-macos-x64.dmg) | 按芯片选择对应包；打开后将 `BiliSail.app` 拖到 `Applications`；当前配置使用 ad-hoc 签名，安装后启动需要`设置-隐私与安全性-允许BiliSail运行` |
-| iOS arm64 | [未签名 IPA](https://github.com/CKopoer/BiliSail/releases/download/v1.3.0%2B6/BiliSail-1.3.0%2B6-ios-arm64-unsigned.ipa) | 安装前须自行使用 Apple 证书及 provisioning profile 签名；GitHub token 仅供 CI 上传产物使用 |
-| Linux x64 | [Flatpak](https://github.com/CKopoer/BiliSail/releases/download/v1.3.0%2B6/BiliSail-1.3.0%2B6-linux-x64.flatpak) / [AppImage](https://github.com/CKopoer/BiliSail/releases/download/v1.3.0%2B6/BiliSail-1.3.0%2B6-linux-x64.AppImage) | Flatpak 通过 `flatpak install --user 文件.flatpak` 安装；AppImage 赋予执行权限后运行。运行库、密钥环及沙盒说明见[平台扩展记录](docs/validation/ios-linux.md) |
+| Windows x64 | [EXE](https://github.com/ZakiuC/BiliSail/releases/download/v1.3.0%2B6/BiliSail-1.3.0%2B6-windows-x64.exe) / [MSI](https://github.com/ZakiuC/BiliSail/releases/download/v1.3.0%2B6/BiliSail-1.3.0%2B6-windows-x64.msi) / [MSIX](https://github.com/ZakiuC/BiliSail/releases/download/v1.3.0%2B6/BiliSail-1.3.0%2B6-windows-x64.msix) / [证书 CER](https://github.com/ZakiuC/BiliSail/releases/download/v1.3.0%2B6/BiliSail-1.3.0%2B6-windows-x64.cer) | 使用msix安装时，需要先信任对应证书；具体步骤见 [MSIX 签名与安装](docs/validation/ci-cd.md#windows-msix-签名与安装) |
+| Windows ARM64 | [EXE](https://github.com/ZakiuC/BiliSail/releases/download/v1.3.0%2B6/BiliSail-1.3.0%2B6-windows-arm64.exe) / [MSI](https://github.com/ZakiuC/BiliSail/releases/download/v1.3.0%2B6/BiliSail-1.3.0%2B6-windows-arm64.msi) / [MSIX](https://github.com/ZakiuC/BiliSail/releases/download/v1.3.0%2B6/BiliSail-1.3.0%2B6-windows-arm64.msix) / [证书 CER](https://github.com/ZakiuC/BiliSail/releases/download/v1.3.0%2B6/BiliSail-1.3.0%2B6-windows-arm64.cer) | 新增 CI 构建目标；已发布版本不会自动补齐该架构 |
+| Android arm64 | [APK](https://github.com/ZakiuC/BiliSail/releases/download/v1.3.0%2B6/BiliSail-1.3.0%2B6-android-arm64.apk) | 固定 release 密钥，跨签名切换与覆盖升级说明见 [Android 签名](docs/validation/ci-cd.md#android-固定签名与覆盖升级) |
+| macOS arm64 / Intel x64 | [Apple Silicon DMG](https://github.com/ZakiuC/BiliSail/releases/download/v1.3.0%2B6/BiliSail-1.3.0%2B6-macos-arm64.dmg) / [Intel x64 DMG](https://github.com/ZakiuC/BiliSail/releases/download/v1.3.0%2B6/BiliSail-1.3.0%2B6-macos-x64.dmg) | 按芯片选择对应包；打开后将 `BiliSail.app` 拖到 `Applications`；当前配置使用 ad-hoc 签名，安装后启动需要`设置-隐私与安全性-允许BiliSail运行` |
+| iOS arm64 | [未签名 IPA](https://github.com/ZakiuC/BiliSail/releases/download/v1.3.0%2B6/BiliSail-1.3.0%2B6-ios-arm64-unsigned.ipa) | 安装前须自行使用 Apple 证书及 provisioning profile 签名；GitHub token 仅供 CI 上传产物使用 |
+| Linux x64 | [Flatpak](https://github.com/ZakiuC/BiliSail/releases/download/v1.3.0%2B6/BiliSail-1.3.0%2B6-linux-x64.flatpak) / [AppImage](https://github.com/ZakiuC/BiliSail/releases/download/v1.3.0%2B6/BiliSail-1.3.0%2B6-linux-x64.AppImage) | Flatpak 通过 `flatpak install --user 文件.flatpak` 安装；AppImage 赋予执行权限后运行。运行库、密钥环及沙盒说明见[平台扩展记录](docs/validation/ios-linux.md) |
 <!-- release-downloads:end -->
 
 GitHub Actions 的 **CI** 执行根应用和四个包的检查，并按平台构建预览产物；维护者可手动运行 **Release preview** 创建预览 Release 草稿，再公开发布。Release 和 CI 构建包的签名种类以各自的 `build-info.json` 为准。触发方式、产物校验与签名配置见 [CI/CD 说明](docs/validation/ci-cd.md)。
@@ -123,7 +138,7 @@ Windows 开发还需安装 **Visual Studio 2022** 的“使用 C++ 的桌面开�
 在 PowerShell 中执行：
 
 ```powershell
-git clone https://github.com/CKopoer/BiliSail.git
+git clone https://github.com/ZakiuC/BiliSail.git
 cd BiliSail
 flutter pub get
 .\tool\build-download-mux.ps1 -Target windows-x64
@@ -238,7 +253,7 @@ Pop-Location
 
 ## 参与贡献
 
-欢迎通过 [Issues](https://github.com/CKopoer/BiliSail/issues) 反馈问题、提出建议，通过 [Pull Requests](https://github.com/CKopoer/BiliSail/pulls) 改进代码、文档和平台适配。
+欢迎通过 [Issues](https://github.com/ZakiuC/BiliSail/issues) 反馈问题、提出建议，通过 [Pull Requests](https://github.com/ZakiuC/BiliSail/pulls) 改进代码、文档和平台适配。
 
 - **反馈问题**：附上应用版本、操作系统、复现步骤、预期与实际结果；播放问题可提供公开视频 BV 号及脱敏诊断。请勿提交 Cookie、token、二维码 key 或带签名参数的媒体 URL。
 - **提出改进**：说明使用场景与预期行为。较大的功能或架构调整建议先通过 Issue 讨论。
@@ -248,8 +263,8 @@ Pop-Location
 
 感谢所有参与代码、文档、测试和问题反馈的贡献者。
 
-<a href="https://github.com/CKopoer/BiliSail/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=CKopoer/BiliSail" alt="BiliSail 代码贡献者头像">
+<a href="https://github.com/ZakiuC/BiliSail/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=ZakiuC/BiliSail" alt="BiliSail 代码贡献者头像">
 </a>
 
 
@@ -259,6 +274,8 @@ Pop-Location
 
 | 项目 | 与 BiliSail 的关系 |
 | --- | --- |
+| [CKopoer/BiliSail（上游）](https://github.com/CKopoer/BiliSail) | 本分支的基线：完整客户端架构、协议层与构建体系均来自上游，分支仅在其上叠加高画质与增强能力，并随上游同步更新（上游内容保留于 [`upstream`](https://github.com/ZakiuC/BiliSail/tree/upstream) 分支） |
+| [BBZQ](https://github.com/HSSkyBoy/BBZQ) | 高画质增强的行为参考：`PlayView` 试用参数、档位选择顺序与地区解锁思路（仅参考行为，未复制代码） |
 | [biliuwp-lite（原项目）](https://github.com/xiaoyaocz/biliuwp-lite) / [ywmoyue 维护分支](https://github.com/ywmoyue/biliuwp-lite) | 功能、桌面布局与交互参考；部分图标资源来源见[资源记录](assets/README.md) |
 | [bili-kernel](https://github.com/Richasy/bili-kernel) | C# / .NET API 项目，为协议模型、鉴权与职责划分提供参考 |
 | [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus) | 播放器配置、Android Surface 生命周期与弹幕优化思路参考；具体采用范围见[移植记录](docs/validation/piliplus-media-kit-port.md) |
@@ -277,11 +294,11 @@ Pop-Location
 
 如果 BiliSail 对你有帮助，欢迎点亮 Star，支持项目持续完善。
 
-<a href="https://www.star-history.com/?repos=CKopoer%2FBiliSail&amp;type=date">
+<a href="https://www.star-history.com/?repos=ZakiuC%2FBiliSail&amp;type=date">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=CKopoer/BiliSail&amp;type=date&amp;theme=dark">
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=CKopoer/BiliSail&amp;type=date">
-    <img src="https://api.star-history.com/chart?repos=CKopoer/BiliSail&amp;type=date" alt="BiliSail Star 数量随时间的变化趋势">
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=ZakiuC/BiliSail&amp;type=date&amp;theme=dark">
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=ZakiuC/BiliSail&amp;type=date">
+    <img src="https://api.star-history.com/chart?repos=ZakiuC/BiliSail&amp;type=date" alt="BiliSail Star 数量随时间的变化趋势">
   </picture>
 </a>
 

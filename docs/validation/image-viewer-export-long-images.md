@@ -54,7 +54,7 @@ Android 剪贴板保留最近四份文件，最多 128 MiB，关闭查看器不�
 
 ## 2026-11-09 原图查看器悬停重绘隔离
 
-[Issue #106](https://github.com/CKopoer/BiliSail/issues/106) 报告 Windows 查看评论原图后，在底部控件间移动鼠标会看到图片闪烁。共享查看器的 `InteractiveViewer` 原先没有独立重绘边界；底部按钮的悬停与提示动画会使同层的静态主图一起重绘。离线回归在 1100 × 740 和 360 × 640 两种视口中均确认：仅悬停“保存图片”就会再次绘制已加载的原图，图片来源、序号和缩放矩阵均未改变。
+[Issue #106](https://github.com/ZakiuC/BiliSail/issues/106) 报告 Windows 查看评论原图后，在底部控件间移动鼠标会看到图片闪烁。共享查看器的 `InteractiveViewer` 原先没有独立重绘边界；底部按钮的悬停与提示动画会使同层的静态主图一起重绘。离线回归在 1100 × 740 和 360 × 640 两种视口中均确认：仅悬停“保存图片”就会再次绘制已加载的原图，图片来源、序号和缩放矩阵均未改变。
 
 [共享查看器](../../lib/shared/ui/image_viewer.dart) 现将整个 `InteractiveViewer` 放在 `RepaintBoundary` 内，把变换后的可见视口与工具栏动画分离。边界位于缩放变换外，图片的缩放、平移与切图仍正常更新；评论、动态、私信和空间入口共用此修复。重绘隔离的机制见 [Flutter RepaintBoundary 文档](https://api.flutter.dev/flutter/widgets/RepaintBoundary-class.html)。
 

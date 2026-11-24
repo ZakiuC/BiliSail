@@ -9,14 +9,14 @@ const { promisify } = require('node:util');
 const { planReleaseBuilds, downloadReusedArtifacts, verifyReleaseAssets } = require('./release-ci-reuse.cjs');
 
 const version = '1.2.5+0';
-const context = { repo: { owner: 'CKopoer', repo: 'BiliSail' }, sha: 'a'.repeat(40) };
+const context = { repo: { owner: 'ZakiuC', repo: 'BiliSail' }, sha: 'a'.repeat(40) };
 const now = Date.parse('2026-10-31T00:00:00Z');
 const allTargets = ['android-arm64', 'windows-x64', 'windows-arm64', 'macos-arm64', 'macos-x64', 'ios-arm64', 'linux-x64'];
 
 function makeRun(id, overrides = {}) {
   return { id, status: 'completed', conclusion: 'success', event: 'push',
-    head_sha: context.sha, head_repository: { full_name: 'CKopoer/BiliSail' },
-    html_url: `https://github.com/CKopoer/BiliSail/actions/runs/${id}`, ...overrides };
+    head_sha: context.sha, head_repository: { full_name: 'ZakiuC/BiliSail' },
+    html_url: `https://github.com/ZakiuC/BiliSail/actions/runs/${id}`, ...overrides };
 }
 
 function makeArtifacts(targets = allTargets, buildVersion = version) {
@@ -230,16 +230,16 @@ test('downloads each selected artifact from its own CI run without a shell', asy
   });
   const selected = await plan({ github, targets: ['android-arm64', 'windows-x64'] });
   const calls = [];
-  await downloadReusedArtifacts({ reused: selected.reused, repository: 'CKopoer/BiliSail', directory: 'release-assets',
+  await downloadReusedArtifacts({ reused: selected.reused, repository: 'ZakiuC/BiliSail', directory: 'release-assets',
     execute: async (...args) => { calls.push(args); } });
   assert.deepEqual(calls, [20, 10].map((runId, index) => ['gh', ['run', 'download', String(runId),
-    '--repo', 'CKopoer/BiliSail', '--name', `BiliSail-${allTargets[index]}-${version}-packages`, '--dir', 'release-assets']]));
+    '--repo', 'ZakiuC/BiliSail', '--name', `BiliSail-${allTargets[index]}-${version}-packages`, '--dir', 'release-assets']]));
 });
 
 test('download failure stops the release without silently dropping a reused target', async () => {
   let calls = 0;
   await assert.rejects(downloadReusedArtifacts({ reused: [{ runId: 10, artifactName: 'one' },
-    { runId: 20, artifactName: 'two' }], repository: 'CKopoer/BiliSail', directory: 'release-assets',
+    { runId: 20, artifactName: 'two' }], repository: 'ZakiuC/BiliSail', directory: 'release-assets',
     execute: async () => { calls++; throw new Error('Artifact expired'); } }), /Artifact expired/);
   assert.equal(calls, 1);
 });
@@ -317,7 +317,7 @@ function gh {
 }
 function Invoke-WebRequest {
   param($Uri, $Headers, $OutFile, $TimeoutSec)
-  if ($Uri -ne 'https://api.github.com/repos/CKopoer/BiliSail/actions/artifacts/4321/zip') {
+  if ($Uri -ne 'https://api.github.com/repos/ZakiuC/BiliSail/actions/artifacts/4321/zip') {
     throw "Unexpected artifact download URI: $Uri"
   }
   if ($Headers.Authorization -ne 'Bearer fixture-token') { throw 'Missing artifact authorization.' }
@@ -329,7 +329,7 @@ ${script.replace(/^          /gm, '')}`);
     cwd: directory,
     env: { ...process.env, RELEASE_VERSION: version, GITHUB_SHA: context.sha,
       GITHUB_SERVER_URL: 'https://github.com', GITHUB_API_URL: 'https://api.github.com',
-      GITHUB_REPOSITORY: 'CKopoer/BiliSail', GITHUB_RUN_ID: '1234', GH_TOKEN: 'fixture-token',
+      GITHUB_REPOSITORY: 'ZakiuC/BiliSail', GITHUB_RUN_ID: '1234', GH_TOKEN: 'fixture-token',
       RELEASE_BUNDLE_ID: '4321', RELEASE_BUNDLE_DIGEST: bundleHash, ...environment },
   });
   return { directory, assetsDirectory, expected, bundleName, bundle, bundleHash, run };
@@ -354,7 +354,7 @@ test('draft uploads packages, the original release bundle and their checksums', 
   assert.equal((await readFile(path.join(directory, bundleName + '.sha256'), 'utf8')).replace(/^\uFEFF/, '').trim(),
     `${bundleHash}  ${bundleName}`);
   const notes = await readFile(path.join(directory, 'release-notes.md'), 'utf8');
-  assert.ok(notes.includes('[Actions 构建记录](https://github.com/CKopoer/BiliSail/actions/runs/1234)'));
+  assert.ok(notes.includes('[Actions 构建记录](https://github.com/ZakiuC/BiliSail/actions/runs/1234)'));
   assert.ok(!notes.includes('见 build-info.json'));
   assert.ok(notes.includes('release-bundle.zip'));
   await verifyReleaseAssets({ ...expected, directory: assetsDirectory });

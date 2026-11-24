@@ -1,6 +1,6 @@
 # 会员彩色弹幕显示与发送（#35）
 
-日期：2026-11-03。对应 [Issue #35](https://github.com/CKopoer/BiliSail/issues/35)。
+日期：2026-11-03。对应 [Issue #35](https://github.com/ZakiuC/BiliSail/issues/35)。
 
 ## 来源与边界
 

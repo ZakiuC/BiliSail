@@ -1,6 +1,6 @@
 # Windows ARM64 悬停预览闪退修复
 
-日期：2026-11-09。关联 [issue #100](https://github.com/CKopoer/BiliSail/issues/100)。
+日期：2026-11-09。关联 [issue #100](https://github.com/ZakiuC/BiliSail/issues/100)。
 
 2026-11-10：用户反馈新构建不再闪退，但仍黑屏，另有 fvp 的 MDK 过期二维码。后续保留 ARM64 GPU 默认路径、撤回统一降级及 SDK 更新见[专项记录](windows-arm64-black-video-2026-11-10.md)；本页初始化检查不能证明已完成实际画面验收。
 

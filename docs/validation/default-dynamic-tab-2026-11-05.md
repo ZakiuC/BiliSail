@@ -1,6 +1,6 @@
 # 动态页默认标签
 
-日期：2026-11-05。需求：[Issue #66](https://github.com/CKopoer/BiliSail/issues/66)。
+日期：2026-11-05。需求：[Issue #66](https://github.com/ZakiuC/BiliSail/issues/66)。
 
 ## 行为
 

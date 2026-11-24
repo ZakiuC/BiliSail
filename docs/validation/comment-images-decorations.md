@@ -63,7 +63,7 @@
 
 ## 2026-11-11 与 PiliPlus 对齐装扮显示（issue #113）
 
-基线 `01e2df8b41272130aca8c5ba1efe87f3c461e554`，对应 [issue #113](https://github.com/CKopoer/BiliSail/issues/113)。只读核对 PiliPlus `cab0114a21ce7fad5b90b9a4d788d35d313d25f9` 的 [评论头部](https://github.com/bggRGjQaUbCoE/PiliPlus/blob/cab0114a21ce7fad5b90b9a4d788d35d313d25f9/lib/pages/video/reply/widgets/reply_item_grpc.dart)、[头像挂件](https://github.com/bggRGjQaUbCoE/PiliPlus/blob/cab0114a21ce7fad5b90b9a4d788d35d313d25f9/lib/common/widgets/pendant_avatar.dart)、`lib/utils/image_utils.dart` 和 `lib/utils/extension/num_ext.dart`。独立修改现有组件；未复制其 GPLv3 源码、图片或数字字体，未新增依赖。编号使用应用现有字体的粗体和等宽数字特性。
+基线 `01e2df8b41272130aca8c5ba1efe87f3c461e554`，对应 [issue #113](https://github.com/ZakiuC/BiliSail/issues/113)。只读核对 PiliPlus `cab0114a21ce7fad5b90b9a4d788d35d313d25f9` 的 [评论头部](https://github.com/bggRGjQaUbCoE/PiliPlus/blob/cab0114a21ce7fad5b90b9a4d788d35d313d25f9/lib/pages/video/reply/widgets/reply_item_grpc.dart)、[头像挂件](https://github.com/bggRGjQaUbCoE/PiliPlus/blob/cab0114a21ce7fad5b90b9a4d788d35d313d25f9/lib/common/widgets/pendant_avatar.dart)、`lib/utils/image_utils.dart` 和 `lib/utils/extension/num_ext.dart`。独立修改现有组件；未复制其 GPLv3 源码、图片或数字字体，未新增依赖。编号使用应用现有字体的粗体和等宽数字特性。
 
 旧评论组件将带透明留白的装扮画布转为 336×120 缩略图，再用 `BoxFit.cover` 和 40 像素偏移裁剪，图片与编号位置也与参考相反。现通过 [UserDecorationImage](../../lib/shared/ui/user_decoration_image.dart) 加载原始图片，保留透明画布，以 38 逻辑像素高度、单一物理高度解码，按屏幕 DPI 向上取整；编号以 8 号字叠在画布右侧。原有窄屏换行、编号前导零、颜色、无障碍标签和加载失败处理继续保留。视频、PGC、动态评论和楼中楼使用同一共享评论组件。
 

@@ -40,7 +40,7 @@ void main() {
           '${installed.major}.${installed.minor}.${installed.patch}+${installed.build + 1}';
       final releaseUrl = Uri.https(
         'github.com',
-        '/CKopoer/BiliSail/releases/tag/v$nextVersion',
+        '/ZakiuC/BiliSail/releases/tag/v$nextVersion',
       );
       final repository = GitHubUpdateRepository(
         versionLoader: loadInstalledAppVersion,
@@ -50,7 +50,7 @@ void main() {
             'draft': false,
             'prerelease': true,
             'html_url':
-                'https://github.com/CKopoer/BiliSail/releases/tag/v999.0.0',
+                'https://github.com/ZakiuC/BiliSail/releases/tag/v999.0.0',
             'body': '预览版本不参与更新提示。',
           },
           {

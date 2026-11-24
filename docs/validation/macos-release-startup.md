@@ -1,10 +1,10 @@
 # macOS 发布启动与安全存储
 
-日期：2026-10-08；验证更新：2026-11-02。当前配置提供 arm64／Intel x64、ad-hoc 签名、未公证的预览 DMG。arm64 保留完整启动／窗口／Keychain smoke；2026-11-02 起按用户要求，x64 仅执行构建、架构、版本、签名、权限、可执行文件和镜像等静态校验，不再将运行 smoke 作为打包门槛，详见下文的 [x64 调整记录](#2026-11-02x64-打包移除运行-smoke)。历史 [CI #221](https://github.com/CKopoer/BiliSail/actions/runs/40804720827)（代码提交 `64acaa709315b9c91e15c67ae173f56b05689570`）的两种架构均完成完整 smoke 和 DMG 打包。设备安装升级、Gatekeeper、真实账号与音画播放仍未验收。
+日期：2026-10-08；验证更新：2026-11-02。当前配置提供 arm64／Intel x64、ad-hoc 签名、未公证的预览 DMG。arm64 保留完整启动／窗口／Keychain smoke；2026-11-02 起按用户要求，x64 仅执行构建、架构、版本、签名、权限、可执行文件和镜像等静态校验，不再将运行 smoke 作为打包门槛，详见下文的 [x64 调整记录](#2026-11-02x64-打包移除运行-smoke)。历史 [CI #221](https://github.com/ZakiuC/BiliSail/actions/runs/40804720827)（代码提交 `64acaa709315b9c91e15c67ae173f56b05689570`）的两种架构均完成完整 smoke 和 DMG 打包。设备安装升级、Gatekeeper、真实账号与音画播放仍未验收。
 
 ## 2026-11-18：标题栏绑定阶段崩溃
 
-[CI 44120327112 的 macOS arm64 任务](https://github.com/CKopoer/BiliSail/actions/runs/44120327112/job/134171826953)在第一轮播放窗焦点与 Space 检查通过后，于标题栏返回按钮绑定阶段以 `139` 退出；两层监督器均未超时，系统崩溃报告未找到。原生 accessory 的初始化顺序与尺寸更新已按 AppKit 的 view／宽高职责修正，并补充固定原生阶段及退出码诊断，见 [CI 专项记录](ci-cd.md#2026-11-18macos-arm64-标题栏绑定崩溃)。Windows 子进程回归通过不代表修复后的 AppKit 执行已通过；新增 Swift XCTest、arm64 Release smoke 和设备操作仍待 Mac 验证。
+[CI 44120327112 的 macOS arm64 任务](https://github.com/ZakiuC/BiliSail/actions/runs/44120327112/job/134171826953)在第一轮播放窗焦点与 Space 检查通过后，于标题栏返回按钮绑定阶段以 `139` 退出；两层监督器均未超时，系统崩溃报告未找到。原生 accessory 的初始化顺序与尺寸更新已按 AppKit 的 view／宽高职责修正，并补充固定原生阶段及退出码诊断，见 [CI 专项记录](ci-cd.md#2026-11-18macos-arm64-标题栏绑定崩溃)。Windows 子进程回归通过不代表修复后的 AppKit 执行已通过；新增 Swift XCTest、arm64 Release smoke 和设备操作仍待 Mac 验证。
 
 ## 根因与配置
 
@@ -43,7 +43,7 @@ Intel CI 首次执行启动探测时曾达到原有 60 秒上限。固定 SDK �
 
 ## CI #222：凭据探测隔离（2026-10-29）
 
-[失败任务](https://github.com/CKopoer/BiliSail/actions/runs/40823201155/job/123282232244) 对应提交 `5fa56a287239075a46d1124206bc2b24dc06c700`。全部离线检查、原生 mux 回归及其余五个构建目标通过；macOS x64 已完成 Release 编译、签名校验、主窗首帧和两轮播放窗验证。随后独立 `write` 进程记录了 `first-frame`，没有记录 `credentials`，60 秒后被打包脚本终止；失败清理通过。同次 arm64 四个阶段全部通过，因此不能把失败归为编译、DMG 创建或已确定的首帧问题。
+[失败任务](https://github.com/ZakiuC/BiliSail/actions/runs/40823201155/job/123282232244) 对应提交 `5fa56a287239075a46d1124206bc2b24dc06c700`。全部离线检查、原生 mux 回归及其余五个构建目标通过；macOS x64 已完成 Release 编译、签名校验、主窗首帧和两轮播放窗验证。随后独立 `write` 进程记录了 `first-frame`，没有记录 `credentials`，60 秒后被打包脚本终止；失败清理通过。同次 arm64 四个阶段全部通过，因此不能把失败归为编译、DMG 创建或已确定的首帧问题。
 
 原凭据进程重复挂载完整 `BiliApp`；首页恢复游客会话时，`AppRecommendationIdentityStore` 会异步清理旧 App 凭据。虽然 Web 会话已注入随机 bootstrap 前缀，推荐仓储仍在 `AppDependencies` 内硬编码正式 `bilisail.app_recommendation.v1`。锁定的 Darwin 插件在单个串行队列中处理所有 Keychain 操作，业务清理可与合成探测交错，也使原本声称隔离的启动检查访问了正式前缀。源码与新增游客清理回归确认这一隔离缺口；现有失败日志缺少细分步骤，不能确认原生调用是否等候系统授权或具体哪一次读写挂起。
 
@@ -53,7 +53,7 @@ Intel CI 首次执行启动探测时曾达到原有 60 秒上限。固定 SDK �
 
 ## CI #223：区分原生启动与探测执行（2026-10-29）
 
-[后续失败任务](https://github.com/CKopoer/BiliSail/actions/runs/40841368541/job/123341427493) 对应隔离修复提交 `aa4f310c42473d145d2b524518e5ebb04f8aa998`。本次 x64 的完整 `startup`、`write`、跨进程 `read-delete` 均通过，`verify-deleted` 超时；其诊断文件明确记录 `stderrPresent=false`、`lastStage=null`、退出码 137（监督脚本终止），没有进入第一步 `deleted` 的证据，随后的同 bundle `cleanup` 也通过。因此上轮隔离缺口不能解释全部失败，本轮不能再把问题归为已确认的 Keychain 读写卡死。
+[后续失败任务](https://github.com/ZakiuC/BiliSail/actions/runs/40841368541/job/123341427493) 对应隔离修复提交 `aa4f310c42473d145d2b524518e5ebb04f8aa998`。本次 x64 的完整 `startup`、`write`、跨进程 `read-delete` 均通过，`verify-deleted` 超时；其诊断文件明确记录 `stderrPresent=false`、`lastStage=null`、退出码 137（监督脚本终止），没有进入第一步 `deleted` 的证据，随后的同 bundle `cleanup` 也通过。因此上轮隔离缺口不能解释全部失败，本轮不能再把问题归为已确认的 Keychain 读写卡死。
 
 旧监督脚本只给整个进程 60 秒，且退出后才打印汇总输出，无法区分原生装载／插件初始化、进入 Dart 和执行凭据调用的耗时。同次成功的 `write` 进程在前一阶段通过约 59 秒后才汇总完成，说明这个统一限额缺少可靠的执行阶段边界；日志仍不能确定无输出的原生等待发生在加载器、Cocoa、插件还是 Dart engine 内。
 
@@ -65,15 +65,15 @@ Intel CI 首次执行启动探测时曾达到原有 60 秒上限。固定 SDK �
 
 ### CI #224 实际执行结果
 
-[CI #224](https://github.com/CKopoer/BiliSail/actions/runs/40851739162) 对应修复提交 `98040b8aa2c46acc2067d965716af93ea64f03c0`，工作流已结束且结论为 `success`，全部检查、独立原生 mux 回归及六个构建目标均通过。macOS [x64](https://github.com/CKopoer/BiliSail/actions/runs/40851739162/job/123376492094) 和 [arm64](https://github.com/CKopoer/BiliSail/actions/runs/40851739162/job/123376491977) 均通过 Release 编译、最终签名与权限校验、四个真实启动／跨进程凭据阶段及 DMG 创建、校验和上传。Swift 标记与实时输出监督已在两种 Mac runner 执行通过。
+[CI #224](https://github.com/ZakiuC/BiliSail/actions/runs/40851739162) 对应修复提交 `98040b8aa2c46acc2067d965716af93ea64f03c0`，工作流已结束且结论为 `success`，全部检查、独立原生 mux 回归及六个构建目标均通过。macOS [x64](https://github.com/ZakiuC/BiliSail/actions/runs/40851739162/job/123376492094) 和 [arm64](https://github.com/ZakiuC/BiliSail/actions/runs/40851739162/job/123376491977) 均通过 Release 编译、最终签名与权限校验、四个真实启动／跨进程凭据阶段及 DMG 创建、校验和上传。Swift 标记与实时输出监督已在两种 Mac runner 执行通过。
 
 x64 日志中，`startup`／`write`／`read-delete`／`verify-deleted` 从创建进程到 Dart 入口分别为 3872／463／470／428 毫秒，`verify-deleted` 随即完成 Keychain 空值核对并成功退出。本次未复现 CI #223 的无输出原生等待，也未用到扩大的启动预算；该次通过不能反推上一轮具体是哪一个系统调用阻塞。新增回归已独立证明启动预算与执行预算分开、重复入口不续期、步骤超时和失败阻断，后续若再出现等待，可通过原生阶段、`timeoutKind` 与单调时间定位。实际设备安装升级、Gatekeeper、真实账号和音画播放仍不包含在本轮 CI 验收内。
 
 ## Release preview #81：监督循环与输出边界（2026-10-31）
 
-[挂起的 x64 任务](https://github.com/CKopoer/BiliSail/actions/runs/41171104657/job/124450999476) 对应 `a88f72ab0dd477e3715e49743850725a453e587e`。实时日志显示 Release 编译、签名、主窗首帧和第一轮播放窗焦点验证已完成；第二轮到 `startup +6873ms BILISAIL_FOCUS_STAGE:space` 后没有继续，也没有观察到原有 60 秒探测超时生效。普通和强制取消请求后，GitHub 仍持续显示运行中，数分钟后才结束；GitHub 的取消协议本身也有 [5 分钟服务端强制终止上限](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-cancellation)，不能仅凭取消耗时推断应用内的具体死锁。
+[挂起的 x64 任务](https://github.com/ZakiuC/BiliSail/actions/runs/41171104657/job/124450999476) 对应 `a88f72ab0dd477e3715e49743850725a453e587e`。实时日志显示 Release 编译、签名、主窗首帧和第一轮播放窗焦点验证已完成；第二轮到 `startup +6873ms BILISAIL_FOCUS_STAGE:space` 后没有继续，也没有观察到原有 60 秒探测超时生效。普通和强制取消请求后，GitHub 仍持续显示运行中，数分钟后才结束；GitHub 的取消协议本身也有 [5 分钟服务端强制终止上限](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-cancellation)，不能仅凭取消耗时推断应用内的具体死锁。
 
-同提交的 [CI x64 任务](https://github.com/CKopoer/BiliSail/actions/runs/41171077936/job/124450943494) 通过了两轮焦点验证、全部凭据阶段和 DMG 打包。按用户要求单独重跑的 [Release 第 2 次 x64 任务](https://github.com/CKopoer/BiliSail/actions/runs/41171104657/job/124462425578) 也已成功，随后创建发布草稿。这些是原代码的通过记录，不能作为下面新保护逻辑的 macOS 验证。
+同提交的 [CI x64 任务](https://github.com/ZakiuC/BiliSail/actions/runs/41171077936/job/124450943494) 通过了两轮焦点验证、全部凭据阶段和 DMG 打包。按用户要求单独重跑的 [Release 第 2 次 x64 任务](https://github.com/ZakiuC/BiliSail/actions/runs/41171104657/job/124462425578) 也已成功，随后创建发布草稿。这些是原代码的通过记录，不能作为下面新保护逻辑的 macOS 验证。
 
 源码复核发现以下流程缺口，但旧日志不足以确认当次是否由其中某项触发：
 
@@ -91,9 +91,9 @@ Windows x64 / Flutter 3.47.6 的 `tool/check.ps1 -SkipPub` 完整通过格式、
 
 ## CI 原生崩溃与线程栈采集（2026-10-31）
 
-提交 `bf70982` 的 [x64 任务](https://github.com/CKopoer/BiliSail/actions/runs/41177953226/job/124471015892) 完成编译和签名后，`startup.result.json` 记录进程在 7277 毫秒退出，`exitCode=139`，`timedOut=false`、`supervisorTimedOut=false`，最后阶段为 `first-frame`。同轮其他五端和离线检查通过，独立 `cleanup` 也通过。139 符合原生 SIGSEGV 的退出码表现，但仅凭 JSON 无法确认崩溃模块。
+提交 `bf70982` 的 [x64 任务](https://github.com/ZakiuC/BiliSail/actions/runs/41177953226/job/124471015892) 完成编译和签名后，`startup.result.json` 记录进程在 7277 毫秒退出，`exitCode=139`，`timedOut=false`、`supervisorTimedOut=false`，最后阶段为 `first-frame`。同轮其他五端和离线检查通过，独立 `cleanup` 也通过。139 符合原生 SIGSEGV 的退出码表现，但仅凭 JSON 无法确认崩溃模块。
 
-后续提交 `d0e0f9b` 的 [x64 任务](https://github.com/CKopoer/BiliSail/actions/runs/41179130810/job/124474660744) 通过两轮播放窗空格检查，但第一轮检查通过到窗口回收后的下一次激活耗时约 43 秒，随后在第二轮 `passed` 后触发探测超时。cleanup 到原生 `application` 和 Dart 入口分别约 99 秒、151 秒。这次是执行超时，不能与前一次原生崩溃合并为已确认的同一原因。
+后续提交 `d0e0f9b` 的 [x64 任务](https://github.com/ZakiuC/BiliSail/actions/runs/41179130810/job/124474660744) 通过两轮播放窗空格检查，但第一轮检查通过到窗口回收后的下一次激活耗时约 43 秒，随后在第二轮 `passed` 后触发探测超时。cleanup 到原生 `application` 和 Dart 入口分别约 99 秒、151 秒。这次是执行超时，不能与前一次原生崩溃合并为已确认的同一原因。
 
 [采集器](../../tool/macos_crash_diagnostics.py) 在 macOS 原生信号异常退出后，最多等待 20 秒，从当前用户和系统的 `DiagnosticReports` 目录查找匹配 BiliSail 名称、本次进程 PID 和启动时间的 `.ips`／`.crash`。超时终止前另对仍存活的本次进程调用系统 `sample`，采样 1 秒，工具最多执行 8 秒；外部采集进程总等待限 25 秒。采集失败或无报告均有明确状态，仍保留原探测失败，不重试、跳过或放宽验收。
 
@@ -107,15 +107,15 @@ Windows x64 / Flutter 3.47.6 的 `tool/check.ps1 -SkipPub` 完整通过格式、
 
 ### 本轮 runner 复现证据
 
-- 采集提交 `0df8d3e` 的 [CI #239](https://github.com/CKopoer/BiliSail/actions/runs/41183623821) 全部检查和六个平台构建通过，两种 macOS 的四个真实阶段与 DMG 校验通过。此提交及本轮后续诊断均未修改 Dart／Swift 应用行为，不能将单次通过归为 139 已修复。
-- 为排除重建差异，诊断分支直接运行该 CI 的已签名 Intel DMG。macOS 15 的一台新 runner [连续 10 次启动成功](https://github.com/CKopoer/BiliSail/actions/runs/41185281179/attempts/2)，其他 runner 分别在[第 2 次](https://github.com/CKopoer/BiliSail/actions/runs/41185281179/attempts/1)和[第 7 次](https://github.com/CKopoer/BiliSail/actions/runs/41185616692)发生探测超时，均成功采集、脱敏并上传 `startup.sample.json`。
+- 采集提交 `0df8d3e` 的 [CI #239](https://github.com/ZakiuC/BiliSail/actions/runs/41183623821) 全部检查和六个平台构建通过，两种 macOS 的四个真实阶段与 DMG 校验通过。此提交及本轮后续诊断均未修改 Dart／Swift 应用行为，不能将单次通过归为 139 已修复。
+- 为排除重建差异，诊断分支直接运行该 CI 的已签名 Intel DMG。macOS 15 的一台新 runner [连续 10 次启动成功](https://github.com/ZakiuC/BiliSail/actions/runs/41185281179/attempts/2)，其他 runner 分别在[第 2 次](https://github.com/ZakiuC/BiliSail/actions/runs/41185281179/attempts/1)和[第 7 次](https://github.com/ZakiuC/BiliSail/actions/runs/41185616692)发生探测超时，均成功采集、脱敏并上传 `startup.sample.json`。
 - 第一个现场的主线程在 `MTLIOAccelTexture dealloc → ioAccelResourceFinalize → IOConnectCallMethod → mach_msg2_trap` 等待；第二个现场的主线程在 `SLSIsDisplayChangedSeedValid` 等待，另有线程在 `AppleParavirtGPUMetal → IOAccelResourceCreate`，以及 Metal pipeline 创建路径等待。由此定位到 runner 的图形／WindowServer 路径，不能再把这些超时直接归为 Keychain 或 Dart 定时器故障。
-- 同产物在 macOS 26 Intel 的[对照运行](https://github.com/CKopoer/BiliSail/actions/runs/41186197530)也发生超时，设备为 `Apple Paravirtual device`，因此没有更换正式 CI runner 或放宽门槛。另一次对照中 worker 提前退出且未保存应用退出码，促使补充 worker 身份／退出码和独立崩溃采集。
+- 同产物在 macOS 26 Intel 的[对照运行](https://github.com/ZakiuC/BiliSail/actions/runs/41186197530)也发生超时，设备为 `Apple Paravirtual device`，因此没有更换正式 CI runner 或放宽门槛。另一次对照中 worker 提前退出且未保存应用退出码，促使补充 worker 身份／退出码和独立崩溃采集。
 - 本轮尚未复现原生 139，也未取得当次 SIGSEGV 的系统报告。以上线程栈证明了独立的图形等待现场，尚不能证明它与原生崩溃同源。应用启动崩溃的根因与修复仍待匹配的崩溃报告确认；设备安装、真实账号和音画验收未执行。
 
 ## 2026-10-31：Intel 启动探测的焦点查询预算
 
-[CI #253 的 x64 任务](https://github.com/CKopoer/BiliSail/actions/runs/41210169441/job/124565190485) 对应提交 `d673a657ba0286a820d8328ea74f16e5efb78da9`。编译、签名、依赖组装和主窗首帧均已完成；其余五个构建目标、离线检查和原生 mux 回归通过。脱敏 `startup.result.json` 记录 `exitCode=1`、`timedOut=false`、`supervisorTimedOut=false`，最后阶段为 `foreground`，不能归为编译或监督脚本超时。
+[CI #253 的 x64 任务](https://github.com/ZakiuC/BiliSail/actions/runs/41210169441/job/124565190485) 对应提交 `d673a657ba0286a820d8328ea74f16e5efb78da9`。编译、签名、依赖组装和主窗首帧均已完成；其余五个构建目标、离线检查和原生 mux 回归通过。脱敏 `startup.result.json` 记录 `exitCode=1`、`timedOut=false`、`supervisorTimedOut=false`，最后阶段为 `foreground`，不能归为编译或监督脚本超时。
 
 日志中，`foreground` 到下一次原生焦点快照间隔约 16 秒；该快照仍为 `active=1 key=1 view=1 inView=1`，紧接着 Dart 主动报出启动失败。源码在这一阶段调用 `WindowInputFocus.synchronizeNativeFocus`，单次平台通道查询另限 2 秒。上述证据支持短查询限额与慢平台队列冲突，但旧探测只记录通用失败，无法恢复当次具体异常类型或底层等待调用；不把本次记录当作已定位图形驱动、Keychain 或历史 SIGSEGV 的根因。
 
@@ -127,7 +127,7 @@ Windows / Flutter 3.47.6 的 `tool/check.ps1 -SkipPub` 完整通过格式、静�
 
 ## 2026-11-02：Intel 重复应用激活与图形等待
 
-[CI 41323620524 的 Intel job](https://github.com/CKopoer/BiliSail/actions/runs/41323620524/job/124901479137) 对应提交 `5dca04f7d0fcb8360288f2b85cb03f58a9fab601`。Release 编译、架构与签名校验已通过，主窗首帧在进程启动约 3.1 秒完成，两轮播放窗的初始焦点和 Space 检查分别在 6.9 秒、25.3 秒通过。随后 60 秒执行预算耗尽，最后标记为 `BILISAIL_FOCUS_STAGE:passed`；独立 cleanup 成功。其余五个平台构建、离线检查及独立原生 mux 回归均成功。本次失败属于打包前的 GUI 启动验收超时。
+[CI 41323620524 的 Intel job](https://github.com/ZakiuC/BiliSail/actions/runs/41323620524/job/124901479137) 对应提交 `5dca04f7d0fcb8360288f2b85cb03f58a9fab601`。Release 编译、架构与签名校验已通过，主窗首帧在进程启动约 3.1 秒完成，两轮播放窗的初始焦点和 Space 检查分别在 6.9 秒、25.3 秒通过。随后 60 秒执行预算耗尽，最后标记为 `BILISAIL_FOCUS_STAGE:passed`；独立 cleanup 成功。其余五个平台构建、离线检查及独立原生 mux 回归均成功。本次失败属于打包前的 GUI 启动验收超时。
 
 本次上传的 `startup.sample.json` 显示，主线程在 `NSApplication _activateUsingEvent → _activateWithInfo → _NXActivateSelf → SLSSetFrontProcessWithInfo → mach_msg2_trap` 等待；另有 `AppleParavirtGPUMetal → MTLIOAccelTexture → IOAccelResourceCreate` 和资源 purgeability 调用等待。采样约 1 秒内这些栈持续存在。这直接定位到 AppKit／WindowServer 与虚拟 GPU 路径，不是 Dart 编译错误或 Keychain 读写失败；单次采样不能证明底层驱动永久死锁。
 
@@ -141,7 +141,7 @@ Intel 虚拟 runner 的 GUI 往返会消耗同一执行预算，例如本次第�
 
 ## 2026-11-02：组合 GUI 检查的执行预算
 
-[CI 41436650047 的 Intel job](https://github.com/CKopoer/BiliSail/actions/runs/41436650047/job/125252164120) 对应提交 `2053716ff3845cdd31454e65606a8e9bb520f43d`，已包含上一节的激活修复。完整日志和本次上传的 `startup.result.json` 确认：Release 编译、架构、签名、主窗首帧、两轮播放窗初始焦点及 Space 检查均已完成，最后在第二轮 `retire` 耗尽 60 秒 Dart 执行预算。独立 cleanup 成功，其余五个平台及离线检查通过。`exitCode=137` 出现在监督器超时采样并终止进程之后，不能当作应用自行崩溃。
+[CI 41436650047 的 Intel job](https://github.com/ZakiuC/BiliSail/actions/runs/41436650047/job/125252164120) 对应提交 `2053716ff3845cdd31454e65606a8e9bb520f43d`，已包含上一节的激活修复。完整日志和本次上传的 `startup.result.json` 确认：Release 编译、架构、签名、主窗首帧、两轮播放窗初始焦点及 Space 检查均已完成，最后在第二轮 `retire` 耗尽 60 秒 Dart 执行预算。独立 cleanup 成功，其余五个平台及离线检查通过。`exitCode=137` 出现在监督器超时采样并终止进程之后，不能当作应用自行崩溃。
 
 本次进程内单调时间如下；执行截止点为首次 `dart-entry` 后 60 秒，即进程启动后约 65.924 秒：
 
@@ -154,7 +154,7 @@ Intel 虚拟 runner 的 GUI 往返会消耗同一执行预算，例如本次第�
 | 第二轮几何读取至卸载 | 45.709 → 53.453 秒 | 7.744 秒 |
 | 第二轮窗口回收 | 53.456 秒开始 | 截止前仅余约 12.5 秒 |
 
-对照上一次 [Intel 成功 job](https://github.com/CKopoer/BiliSail/actions/runs/41326732189/job/124910573646)，相同激活代码的第二轮回收从 11.279 秒持续到 42.075 秒，单次耗时 **30.796 秒**，随后完整 smoke 和 DMG 打包通过。已成功的回收操作也可能超过本次剩余时间，说明组合 GUI 操作沿用凭据探测的 60 秒总预算缺少余量。不能据此证明本次只需多等几秒就一定成功；本次 `startup.sample.json` 的采样状态是 `timed_out`，没有取得线程栈，历史图形等待现场不能冒充本次采样证据。重跑可能成功，但不会消除该预算配置缺口，也不能把历史 SIGSEGV、焦点断言失败和执行超时统一归为同一个问题。
+对照上一次 [Intel 成功 job](https://github.com/ZakiuC/BiliSail/actions/runs/41326732189/job/124910573646)，相同激活代码的第二轮回收从 11.279 秒持续到 42.075 秒，单次耗时 **30.796 秒**，随后完整 smoke 和 DMG 打包通过。已成功的回收操作也可能超过本次剩余时间，说明组合 GUI 操作沿用凭据探测的 60 秒总预算缺少余量。不能据此证明本次只需多等几秒就一定成功；本次 `startup.sample.json` 的采样状态是 `timed_out`，没有取得线程栈，历史图形等待现场不能冒充本次采样证据。重跑可能成功，但不会消除该预算配置缺口，也不能把历史 SIGSEGV、焦点断言失败和执行超时统一归为同一个问题。
 
 本轮在共享发布校验脚本中按阶段选择固定预算：`startup` 从首次 Dart 入口起 **180 秒**，为首帧／观察、两轮窗口交互与回收的组合检查留出余量；四个凭据／清理阶段仍为 **60 秒**，原生启动仍为 **180 秒**。父进程把预算显式传给独立 worker，worker 不另设默认值；外层硬限额随实际预算计算。日志及运行中的脱敏 JSON 均记录所选预算。Dart 的单次焦点查询仍限 60 秒，凭据单步仍限 10 秒。所有成功断言、退出码、确认行、签名与权限校验继续生效，进度不能续期，不自动重试。CI 与 Release 复用同一校验入口，因此无需修改两份工作流的 30／40 分钟上限。
 
@@ -164,7 +164,7 @@ Intel 虚拟 runner 的 GUI 往返会消耗同一执行预算，例如本次第�
 
 ## 2026-11-02：x64 打包移除运行 smoke
 
-[CI 41468230710 的 Intel job](https://github.com/CKopoer/BiliSail/actions/runs/41468230710/job/125360623705) 已完成 Release 编译、四份二进制架构、版本和签名校验。`startup.result.json` 显示首次 Dart 入口在进程启动后 3.780 秒，首帧在 4.878 秒完成；进程约 7.066 秒以 `exitCode=139`（SIGSEGV）退出，`timedOut=false`、`supervisorTimedOut=false`，没有成功确认行，最后阶段为 `first-frame`。这次不是 180 秒预算不足；`startup.crash.json` 为 `not_found`，不足以确定原生崩溃模块，也不能直接归因于历史 WindowServer／虚拟 GPU 等待。失败后的独立 `cleanup` 成功，其余五个平台构建、离线检查及原生 mux 任务通过。
+[CI 41468230710 的 Intel job](https://github.com/ZakiuC/BiliSail/actions/runs/41468230710/job/125360623705) 已完成 Release 编译、四份二进制架构、版本和签名校验。`startup.result.json` 显示首次 Dart 入口在进程启动后 3.780 秒，首帧在 4.878 秒完成；进程约 7.066 秒以 `exitCode=139`（SIGSEGV）退出，`timedOut=false`、`supervisorTimedOut=false`，没有成功确认行，最后阶段为 `first-frame`。这次不是 180 秒预算不足；`startup.crash.json` 为 `not_found`，不足以确定原生崩溃模块，也不能直接归因于历史 WindowServer／虚拟 GPU 等待。失败后的独立 `cleanup` 成功，其余五个平台构建、离线检查及原生 mux 任务通过。
 
 按用户要求，[共用打包脚本](../../tool/build-release.ps1) 仅对 `macos-x64` 传入 `-SkipRuntimeSmoke`：不启动 GUI、不执行两轮播放窗／焦点测试，也不执行合成 Keychain 读写、重启和 cleanup。验证辅助脚本在跳过分支之前仍校验签名、最终权限和可执行文件；架构、版本、DMG 创建／校验、源码归档和 SHA-256 流程继续执行。该选择同时作用于 CI、Release 新建构建和本地共用入口，arm64 继续完整 smoke，辅助脚本默认也继续完整验证。源码中的 smoke 逻辑及离线行为回归保留。
 

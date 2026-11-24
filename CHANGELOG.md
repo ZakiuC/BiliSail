@@ -1,7 +1,21 @@
 # 更新日志
 
 应用版本号只维护在根 `pubspec.yaml`（`x.y.z+N`），每个可构建的变更都会递增。
-更早版本见 [GitHub Releases](https://github.com/CKopoer/BiliSail/releases)。
+更早版本见 [GitHub Releases](https://github.com/ZakiuC/BiliSail/releases)。
+
+## 1.4.1+16
+
+### 变更
+
+- **仓库与更新源迁移至本仓库（ZakiuC/BiliSail）**：应用内检查更新、外链白名单、
+  issue 模板、CI 触发与发布配置全部指向本仓库；上游 CKopoer/BiliSail 保留于
+  `upstream` 分支以便同步更新。
+- 发布说明中的国内下载渠道更新为新的夸克网盘链接（提取码 cPPC）。
+- **macOS 加入推送自动构建**：默认构建 Android / Windows / macOS 三个平台，
+  iOS / Linux 仍需手动触发 Release preview 勾选。
+- README 重写为本分支实际情况：新增「本分支的增强」章节（PlayView 高画质链路、
+  请求头整套切换、探测回落、HDR 避开、番剧地区解锁等），下载与安装说明更新，
+  致谢补充上游与 BBZQ 参考。
 
 ## 1.4.0+15
 

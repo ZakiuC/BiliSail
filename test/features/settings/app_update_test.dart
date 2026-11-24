@@ -35,7 +35,7 @@ AppRelease _release(
   version: _version(value),
   notes: notes,
   prerelease: prerelease,
-  url: Uri.https('github.com', '/CKopoer/BiliSail/releases/tag/v$value'),
+  url: Uri.https('github.com', '/ZakiuC/BiliSail/releases/tag/v$value'),
 );
 Map<String, Object?> _jsonRelease(
   String tag, {
@@ -48,7 +48,7 @@ Map<String, Object?> _jsonRelease(
   'prerelease': prerelease,
   'html_url':
       url ??
-      Uri.https('github.com', '/CKopoer/BiliSail/releases/tag/$tag').toString(),
+      Uri.https('github.com', '/ZakiuC/BiliSail/releases/tag/$tag').toString(),
   'body': '更新说明',
 };
 
@@ -192,7 +192,7 @@ void main() {
           _jsonRelease('notes'),
           _jsonRelease(
             'v0.3.0+10',
-            url: 'https://github.com/CKopoer/BiliSail/releases/tag/v0.3.0%2B10',
+            url: 'https://github.com/ZakiuC/BiliSail/releases/tag/v0.3.0%2B10',
           ),
           _jsonRelease('v0.3.0+2'),
           _jsonRelease('v0.1.0+200'),
@@ -309,14 +309,14 @@ void main() {
       jsonEncode([
         _jsonRelease(
           'v1.0.0',
-          url: 'https://user:pass@github.com/CKopoer/BiliSail/releases/tag/v1.0.0',
+          url: 'https://user:pass@github.com/ZakiuC/BiliSail/releases/tag/v1.0.0',
         ),
       ]),
       jsonEncode([
         _jsonRelease(
           'v1.0.0',
           url:
-              'https://github.com/CKopoer/BiliSail/releases/tag/v1.0.0?token=x',
+              'https://github.com/ZakiuC/BiliSail/releases/tag/v1.0.0?token=x',
         ),
       ]),
     ]) {
@@ -529,12 +529,12 @@ void main() {
       }
       for (final url in [
         'https://github.com/Other/Repo',
-        'http://github.com/CKopoer/BiliSail',
-        'https://github.com:444/CKopoer/BiliSail',
-        'https://user@github.com/CKopoer/BiliSail',
-        'https://github.com/CKopoer/BiliSail?token=x',
-        'https://github.com/CKopoer/BiliSail/issues',
-        'https://github.com.evil.example/CKopoer/BiliSail',
+        'http://github.com/ZakiuC/BiliSail',
+        'https://github.com:444/ZakiuC/BiliSail',
+        'https://user@github.com/ZakiuC/BiliSail',
+        'https://github.com/ZakiuC/BiliSail?token=x',
+        'https://github.com/ZakiuC/BiliSail/issues',
+        'https://github.com.evil.example/ZakiuC/BiliSail',
       ]) {
         expect(isAllowedExternalLink(Uri.parse(url)), isFalse, reason: url);
       }
@@ -903,9 +903,9 @@ ${'long-code-line-' * 20}
       ..release = _release(
         '0.2.0',
         notes: '''
-[查看提交](https://github.com/CKopoer/BiliSail/compare/v0.1.0...v0.2.0)
+[查看提交](https://github.com/ZakiuC/BiliSail/compare/v0.1.0...v0.2.0)
 
-[查看问题](/CKopoer/BiliSail/issues/123)
+[查看问题](/ZakiuC/BiliSail/issues/123)
 
 [本地文件](file:///private.txt)
 
@@ -921,8 +921,8 @@ ${'long-code-line-' * 20}
     await tester.tap(find.text('查看问题'));
     await tester.pumpAndSettle();
     expect(opened, [
-      Uri.parse('https://github.com/CKopoer/BiliSail/compare/v0.1.0...v0.2.0'),
-      Uri.parse('https://github.com/CKopoer/BiliSail/issues/123'),
+      Uri.parse('https://github.com/ZakiuC/BiliSail/compare/v0.1.0...v0.2.0'),
+      Uri.parse('https://github.com/ZakiuC/BiliSail/issues/123'),
     ]);
     for (final label in ['本地文件', '脚本链接']) {
       await tester.tap(find.text(label));
@@ -1000,7 +1000,7 @@ ${'long-code-line-' * 20}
       );
       await tester.pumpAndSettle();
       expect(find.text('0.1.0+1'), findsOneWidget);
-      expect(find.text('https://github.com/CKopoer/BiliSail'), findsOneWidget);
+      expect(find.text('https://github.com/ZakiuC/BiliSail'), findsOneWidget);
       expect(find.textContaining('Huawei'), findsNothing);
       expect(find.textContaining('阿里巴巴'), findsNothing);
       await tester.tap(find.text('GitHub'));

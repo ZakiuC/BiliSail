@@ -56,7 +56,7 @@
 
 ## 2026-11-02：视频底层手势抢占（Issue #58）
 
-- [#58](https://github.com/CKopoer/BiliSail/issues/58) 反馈 Android 横滑进度、纵滑亮度／音量没有提示，偶尔成功。核对[固定的视频插件](piliplus-dependencies-2026-11-01.md)发现，`media_kit_video` 的 `Video` 在 `NoVideoControls` 下仍挂载 `InteractiveViewer`，默认允许缩放，Android 的局部 `touchSlop` 为 4。应用画面点击层使用 `HitTestBehavior.translucent`，Stack 会继续命中下面的视频组件；其缩放识别器可早于应用的方向拖动识别器赢得手势竞争，随后应用横滑／纵滑被取消。事件若一次跨过应用阈值，也可能由应用先获胜，因此表现为偶发成功。长按倍速不是这次抢占的来源。
+- [#58](https://github.com/ZakiuC/BiliSail/issues/58) 反馈 Android 横滑进度、纵滑亮度／音量没有提示，偶尔成功。核对[固定的视频插件](piliplus-dependencies-2026-11-01.md)发现，`media_kit_video` 的 `Video` 在 `NoVideoControls` 下仍挂载 `InteractiveViewer`，默认允许缩放，Android 的局部 `touchSlop` 为 4。应用画面点击层使用 `HitTestBehavior.translucent`，Stack 会继续命中下面的视频组件；其缩放识别器可早于应用的方向拖动识别器赢得手势竞争，随后应用横滑／纵滑被取消。事件若一次跨过应用阈值，也可能由应用先获胜，因此表现为偶发成功。长按倍速不是这次抢占的来源。
 - 将共享画面点击层改为 `HitTestBehavior.opaque`，使触摸事件止于应用画面层。其父级的进度、亮度／音量和长按倍速仍在同一命中路径内；上层按钮、进度条与弹层继续独立处理输入。未修改播放器依赖、原生解码、手势阈值或长按时限。
 - 原来的 fake 视频仅绘制黑色区域，缺少真实视频组件的缩放识别器，因而既有快速滑动测试不能复现。新增与固定插件相同的低阈值 `InteractiveViewer` 夹具，用连续小位移覆盖 390dp 手机画面、普通／全屏、控件显示／隐藏；修复前 4 组均无法提交横滑，修复后均通过。用例还验证长按释放后的双向进度、双向音量和双向亮度、底层缩放未触发、暂停意图／倍速／源代次不变，且没有重新打开或增加视频 surface。
 - 手势组件和完整播放面板 **447 项定向测试通过**，包含原有长按固定／解除倍速、点击／双击、控件和生命周期回归。日志位于忽略目录 `build/validation/issue-58-interactive-before.log`、`issue-58-interactive-after.log` 与 `issue-58-targeted.log`。

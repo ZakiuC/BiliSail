@@ -1,8 +1,8 @@
 import '../../../domain/request_cancellation.dart';
 
 final class AppUpdateLinks {
-  static final repository = Uri.https('github.com', '/CKopoer/BiliSail');
-  static final releases = Uri.https('github.com', '/CKopoer/BiliSail/releases');
+  static final repository = Uri.https('github.com', '/ZakiuC/BiliSail');
+  static final releases = Uri.https('github.com', '/ZakiuC/BiliSail/releases');
 }
 
 /// Semantic version precedence, then the numeric Flutter build revision.

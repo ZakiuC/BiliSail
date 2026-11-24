@@ -4,7 +4,7 @@
 
 ## 失败证据与原因
 
-[CI 42474110345](https://github.com/CKopoer/BiliSail/actions/runs/42474110345) 对应提交 `0dee85db1c1c1104e819419b3a04b5b7cd6b9664`。格式／分析、两份根测试分片、包测试、mux 原生回归及其他六个平台构建均成功；唯一失败为 [Windows ARM64 构建](https://github.com/CKopoer/BiliSail/actions/runs/42474110345/job/128713756281)。
+[CI 42474110345](https://github.com/ZakiuC/BiliSail/actions/runs/42474110345) 对应提交 `0dee85db1c1c1104e819419b3a04b5b7cd6b9664`。格式／分析、两份根测试分片、包测试、mux 原生回归及其他六个平台构建均成功；唯一失败为 [Windows ARM64 构建](https://github.com/ZakiuC/BiliSail/actions/runs/42474110345/job/128713756281)。
 
 该任务已完成 Windows 媒体归档准备、MDK 解压和 ARM64 ANGLE 导入库生成，随后在 CMake 配置阶段进入应用的 `bilisail_verify_media_assets()`，报告 `list index: 6 out of range (-6, 5)`，并误报 SDK 缺少 `LICENSE.LGPL`。失败发生于 11:25:15 UTC（北京时间 19:25:15）。
 

@@ -39,7 +39,7 @@ Linux 的 APT 下载、固定 SHA 的 linuxdeploy／GTK 工具和用户级 Flatp
 
 本轮本地验证：`tool/check.ps1 -SkipPub` 通过，根应用 4,729 项、API 719 项、播放器 358 项、弹幕 161 项、封装 5 项，共 5,972 项 Dart／Flutter 测试通过；13 项 Windows 符号链接用例因环境限制、10 项 mux 原生用例因未配置 `BILI_MUX_LIBRARY` 跳过，不计作原生覆盖。最终缓存／触发策略 20 项行为回归、185 项构建计划检查、64 项 Release 回归、actionlint 1.7.12、本文本地链接和 `git diff --check` 通过，五份锁文件未改。根检查日志为 `build/ci-cache-optimization-check.log`。使用当时线上清单只读预演，识别 6 条停用／重复的默认分支缓存，合计约 4.84 GB；未实际删除缓存、推送或运行远端 CI，新的命中率、耗时与清理效果仍待默认分支工作流运行确认。
 
-后续实际 [CI 42477165794](https://github.com/CKopoer/BiliSail/actions/runs/42477165794/job/128721014814) 在 runner 2.338.2 加载组合 Action 时失败：`outputs.value` 不能直接使用 `hashFiles()`，因此尚未安装 Flutter 就终止；随后的格式诊断又因缺少 Dart 产生次生错误。修正为直接导出 Pub restore 步骤的 `cache-primary-key`，锁文件哈希仍只在步骤的 `with.key` 中计算，精确命中、前缀回退和未命中都导出本次请求键；格式诊断同时要求 Flutter setup 成功。新增回归覆盖这三个输出场景、组合 Action 输出的函数作用域及诊断执行条件；原 actionlint 检查没有覆盖这个运行器加载边界，不能将其通过等同于远端 Action 已验证。
+后续实际 [CI 42477165794](https://github.com/ZakiuC/BiliSail/actions/runs/42477165794/job/128721014814) 在 runner 2.338.2 加载组合 Action 时失败：`outputs.value` 不能直接使用 `hashFiles()`，因此尚未安装 Flutter 就终止；随后的格式诊断又因缺少 Dart 产生次生错误。修正为直接导出 Pub restore 步骤的 `cache-primary-key`，锁文件哈希仍只在步骤的 `with.key` 中计算，精确命中、前缀回退和未命中都导出本次请求键；格式诊断同时要求 Flutter setup 成功。新增回归覆盖这三个输出场景、组合 Action 输出的函数作用域及诊断执行条件；原 actionlint 检查没有覆盖这个运行器加载边界，不能将其通过等同于远端 Action 已验证。
 
 该修复的 `tool/check.ps1 -SkipPub` 通过：根应用 4,729、API 719、播放器 360、弹幕 161、封装 5，共 5,974 项 Dart／Flutter 测试通过，13 项符号链接及 10 项 mux 原生用例按上述环境限制跳过。22 项缓存／触发回归通过，并在隔离临时目录确认新增回归会拒绝原提交的错误输出写法；actionlint、本文本地链接与 `git diff --check` 通过，五份锁文件未改。日志为 `build/ci-composite-output-fix-check.log`；修复后的远端组合 Action 加载仍待新提交 CI 确认。
 
@@ -60,18 +60,18 @@ Dart 3.13.5 内置的 [Pub 源码](https://github.com/dart-lang/pub/blob/ec276d1
 - 检查与打包脚本从仓库根的 `.flutter-version` 读取预期版本。CI 安装配置与 Windows x64 SDK 归档的提交、路径及 SHA-256 已同步到 3.50.1。Dart 仍为 3.14.0，五份锁文件通过严格与普通 Pub 解析，文件内容一致。[Flutter 官方归档清单](https://storage.googleapis.com/flutter_infra_release/releases/releases_windows.json)
 - Windows x64 的 `tool/check.ps1 -EnforceLockfile` 通过格式、静态分析、打包边界和 7,380 项 Dart／Flutter 测试，其中包含 10 项 mux 原生测试。根应用 14 项、播放器 10 项按环境条件跳过。普通 Release 构建通过。离线独立播放窗口 Debug／Release 烟测均覆盖启动、缩放、最大化、全屏、IME 关联及关闭，Debug 热重载通过。Release 烟测出现一次引擎窗口尺寸告警，测试断言通过。
 - Linux 在 WSL Ubuntu 24.04／Xvfb 使用本次 Flutter 引擎与固定 media_kit 原生库，默认合成和模拟无 framebuffer blit 的着色器回退各通过 11 项软件视频及周边布局像素断言。覆盖本地合成样本，保留物理 GPU 和真实播放验收。
-- [CI 44915825904](https://github.com/CKopoer/BiliSail/actions/runs/44915825904) 对 `d4ca5926` 的质量检查与七个目标全部通过。Android arm64 APK 清单核实 `versionName=1.3.0`、`versionCode=13005`，签名检查通过。平台构建的覆盖范围见上表。
+- [CI 44915825904](https://github.com/ZakiuC/BiliSail/actions/runs/44915825904) 对 `d4ca5926` 的质量检查与七个目标全部通过。Android arm64 APK 清单核实 `versionName=1.3.0`、`versionCode=13005`，签名检查通过。平台构建的覆盖范围见上表。
 
 
 ### SDK 升级与依赖更新
 
 根应用锁文件更新 22 个传递依赖，包括 `sqlite3 3.9.1`、`jni 1.2.1`、`jni_flutter 1.1.0` 和 `sqflite` 平台插件。其余四份锁文件沿用各包的独立依赖解析。SQLite 七个构建目标的上游原生资产 SHA-256 与锁定版本的资产清单逐项核对一致。[SQLite 3.9.1 发布记录](https://github.com/simolus3/sqlite3.dart/releases/tag/sqlite3-3.9.1)
 
-合入检查使用升级后的根锁文件。构建记录见[依赖更新验证分支的 CI](https://github.com/CKopoer/BiliSail/actions/workflows/ci.yml?query=branch%3Acodex%2Fflutter-3.50.1-dependencies)。
+合入检查使用升级后的根锁文件。构建记录见[依赖更新验证分支的 CI](https://github.com/ZakiuC/BiliSail/actions/workflows/ci.yml?query=branch%3Acodex%2Fflutter-3.50.1-dependencies)。
 
 ## 2026-11-18：macOS arm64 标题栏绑定崩溃
 
-[CI 44120327112](https://github.com/CKopoer/BiliSail/actions/runs/44120327112) 对应 `eed24e9288b657045a5986083edc71f1631e0e51`。检查、原生 mux 回归与其余六个平台构建通过；[macOS arm64 job](https://github.com/CKopoer/BiliSail/actions/runs/44120327112/job/134171826953) 已完成 Release 编译、架构与签名校验、主窗首帧以及第一轮播放窗焦点／Space 检查，随后在 `BILISAIL_FOCUS_STAGE:bind` 退出。下载的诊断产物 `startup.result.json` 记录应用 `exitCode=139`、worker `exitCode=1`、两层 `timedOut=false`，应用总耗时约 6.045 秒；失败后的独立 cleanup 成功。它是标题栏绑定阶段的原生崩溃，不是首帧等待、焦点断言、执行预算或编译失败。`startup.crash.json` 为 `not_found`，没有线程栈，不能据此确定崩溃的内部调用或将后续源码修正直接视为已验证的 SIGSEGV 根因。
+[CI 44120327112](https://github.com/ZakiuC/BiliSail/actions/runs/44120327112) 对应 `eed24e9288b657045a5986083edc71f1631e0e51`。检查、原生 mux 回归与其余六个平台构建通过；[macOS arm64 job](https://github.com/ZakiuC/BiliSail/actions/runs/44120327112/job/134171826953) 已完成 Release 编译、架构与签名校验、主窗首帧以及第一轮播放窗焦点／Space 检查，随后在 `BILISAIL_FOCUS_STAGE:bind` 退出。下载的诊断产物 `startup.result.json` 记录应用 `exitCode=139`、worker `exitCode=1`、两层 `timedOut=false`，应用总耗时约 6.045 秒；失败后的独立 cleanup 成功。它是标题栏绑定阶段的原生崩溃，不是首帧等待、焦点断言、执行预算或编译失败。`startup.crash.json` 为 `not_found`，没有线程栈，不能据此确定崩溃的内部调用或将后续源码修正直接视为已验证的 SIGSEGV 根因。
 
 对照 Apple 的 [accessory 控制器约束](https://developer.apple.com/documentation/appkit/nstitlebaraccessoryviewcontroller)与 [view 初始化要求](https://developer.apple.com/documentation/appkit/nsviewcontroller/view)，[原生标题栏](../../macos/Runner/MainFlutterWindow.swift)存在两个可确认的问题：在安装自定义 view 之前设置 `layoutAttribute`，以及 `.left` accessory 已挂载后，每次配置都把 AppKit 管理的高度重设为 28 pt。现先安装程序化 view，再设置布局；首次按钮状态和宽度在加入窗口前配置。后续配置只在宽度改变时写入新宽度，保留当前高度，普通启用／禁用不再触发尺寸更新。返回／主页回调、全屏处理与独立窗口所有权沿用原流程。
 
@@ -81,7 +81,7 @@ Windows／Flutter 3.50.0 的 `tool/check.ps1 -SkipPub` 完整通过：格式、�
 
 ## 2026-11-17：macOS 播放窗口首帧与焦点检查
 
-[CI 43910647559](https://github.com/CKopoer/BiliSail/actions/runs/43910647559) 对应 master `58266ee2`。分析、四份根测试、包测试、mux 原生回归及其他六个目标构建通过；macOS arm64 已完成 Release 编译、签名与主窗首帧检查，在第一次播放窗 `prepare` 后进入清理，报 `state`，没有执行 `present`。诊断产物确认没有超时，清理阶段也正常退出。
+[CI 43910647559](https://github.com/ZakiuC/BiliSail/actions/runs/43910647559) 对应 master `58266ee2`。分析、四份根测试、包测试、mux 原生回归及其他六个目标构建通过；macOS arm64 已完成 Release 编译、签名与主窗首帧检查，在第一次播放窗 `prepare` 后进入清理，报 `state`，没有执行 `present`。诊断产物确认没有超时，清理阶段也正常退出。
 
 固定 [Flutter 3.50 的普通窗口实现](https://github.com/flutter/flutter/blob/ab2912035e160d9cad6306df307576da6128ebdb/engine/src/flutter/shell/platform/darwin/macos/framework/Source/FlutterWindowController.mm#L565) 在 `onFirstFrame` 才调用 `makeKeyAndOrderFront`。旧烟测在挂载窗口内容之前要求新播放窗已经获得原生焦点，因而必然拒绝仍聚焦主窗的正常状态。
 
@@ -93,10 +93,10 @@ Windows／Flutter 3.50.0 的 `tool/check.ps1 -SkipPub` 完整通过：格式、�
 
 ## 2026-11-17：Flutter 3.50 后的 Android 与 macOS 构建失败
 
-[CI 43904052334](https://github.com/CKopoer/BiliSail/actions/runs/43904052334) 的格式／分析、四份根测试、包测试、mux 原生回归及其余平台构建均通过，Android arm64 与 macOS arm64 在打包步骤失败。
+[CI 43904052334](https://github.com/ZakiuC/BiliSail/actions/runs/43904052334) 的格式／分析、四份根测试、包测试、mux 原生回归及其余平台构建均通过，Android arm64 与 macOS arm64 在打包步骤失败。
 
-- [Android 日志](https://github.com/CKopoer/BiliSail/actions/runs/43904052334/job/133431137851) 明确在应用 Flutter Gradle 插件时拒绝 AGP 9.1.0，要求至少 9.1.1。核对固定 Flutter SDK 的 `DependencyVersionChecker.kt`，Kotlin 最低版本也已变为 2.4.10；同步将项目的 AGP／Kotlin 插件固定为 9.1.1／2.4.10。Gradle 9.3.1 和 JDK 17 仍满足最低要求，保留 Wrapper 版本及摘要；[AGP 官方兼容表](https://developer.android.com/build/releases/agp-9-1-0-release-notes)也支持这一组合。不跳过 Flutter 的构建依赖验证。
-- [macOS arm64 日志](https://github.com/CKopoer/BiliSail/actions/runs/43904052334/job/133431137856) 已完成 Release 编译与签名，`startup` 在 `first-frame-wait` 后立即报 `state`，并非超时或原生崩溃。对应 Dart 路径在 raster timing 完成后立即检查 `framesEnabled`。固定 SDK 的 `FlutterWindowController.mm` 在 `onFirstFrame` 中才显示普通窗口，`FlutterView.mm` 的呈现回调在 AppKit 主线程执行；Dart 收到 raster timing 不保证原生窗口已经显示、生命周期消息已经送达。由日志与源码可定位到这个异步交接窗口；本机 Windows 不能复现真实 AppKit 时序。
+- [Android 日志](https://github.com/ZakiuC/BiliSail/actions/runs/43904052334/job/133431137851) 明确在应用 Flutter Gradle 插件时拒绝 AGP 9.1.0，要求至少 9.1.1。核对固定 Flutter SDK 的 `DependencyVersionChecker.kt`，Kotlin 最低版本也已变为 2.4.10；同步将项目的 AGP／Kotlin 插件固定为 9.1.1／2.4.10。Gradle 9.3.1 和 JDK 17 仍满足最低要求，保留 Wrapper 版本及摘要；[AGP 官方兼容表](https://developer.android.com/build/releases/agp-9-1-0-release-notes)也支持这一组合。不跳过 Flutter 的构建依赖验证。
+- [macOS arm64 日志](https://github.com/ZakiuC/BiliSail/actions/runs/43904052334/job/133431137856) 已完成 Release 编译与签名，`startup` 在 `first-frame-wait` 后立即报 `state`，并非超时或原生崩溃。对应 Dart 路径在 raster timing 完成后立即检查 `framesEnabled`。固定 SDK 的 `FlutterWindowController.mm` 在 `onFirstFrame` 中才显示普通窗口，`FlutterView.mm` 的呈现回调在 AppKit 主线程执行；Dart 收到 raster timing 不保证原生窗口已经显示、生命周期消息已经送达。由日志与源码可定位到这个异步交接窗口；本机 Windows 不能复现真实 AppKit 时序。
 
 首帧探测现等待真实引擎生命周期使帧调度恢复，等待上限五秒，并在 `finally` 中移除监听。随后仍要求另一个正常调度帧完成；持续 `hidden/paused/detached` 仍失败，不调用激活、不改写生命周期，也不跳过两轮播放窗或跨进程 Keychain 验收。回归覆盖 raster timing 后延迟转为前台／可见后台，以及始终禁帧的超时失败。
 
@@ -108,7 +108,7 @@ Windows／Flutter 3.50.0 的 `tool/check.ps1 -SkipPub` 完整通过：格式、�
 
 ## 2026-11-08：实际 CI 耗时与缓存调整
 
-分析对象为 [CI 42480258474](https://github.com/CKopoer/BiliSail/actions/runs/42480258474)，源码 `28dfa0f8f3060016ce8a2a59c9a71e8942966178`，总墙钟约 31 分 53 秒。全部检查和六个构建目标通过，Windows ARM64 构建失败；这是该次运行的证据，不代表本轮未提交改动已经通过远端验证。
+分析对象为 [CI 42480258474](https://github.com/ZakiuC/BiliSail/actions/runs/42480258474)，源码 `28dfa0f8f3060016ce8a2a59c9a71e8942966178`，总墙钟约 31 分 53 秒。全部检查和六个构建目标通过，Windows ARM64 构建失败；这是该次运行的证据，不代表本轮未提交改动已经通过远端验证。
 
 | 任务 | 该次实际墙钟 | 主要观察 |
 | --- | --- | --- |
@@ -137,7 +137,7 @@ Windows／Flutter 3.50.0 的 `tool/check.ps1 -SkipPub` 完整通过：格式、�
 
 ## 2026-11-08：第二轮 CI 复盘与 Windows 编译调整
 
-分析对象为 [CI 42485547260](https://github.com/CKopoer/BiliSail/actions/runs/42485547260)，源码 `2f853f5b5db22a05643666a4b28522215804ca0a`，总墙钟约 **31:13**。全部检查与六个构建目标通过，只有 Windows ARM64 失败。以下是该次已完成运行的结果；本节新增的编译调整尚未进入远端运行。
+分析对象为 [CI 42485547260](https://github.com/ZakiuC/BiliSail/actions/runs/42485547260)，源码 `2f853f5b5db22a05643666a4b28522215804ca0a`，总墙钟约 **31:13**。全部检查与六个构建目标通过，只有 Windows ARM64 失败。以下是该次已完成运行的结果；本节新增的编译调整尚未进入远端运行。
 
 | 任务 | 该次实际墙钟 | 观察 |
 | --- | --- | --- |
@@ -165,7 +165,7 @@ Windows／Flutter 3.50.0 的 `tool/check.ps1 -SkipPub` 完整通过：格式、�
 
 ## 2026-11-08：ARM64 CRT 打包修复
 
-[CI 42491499203](https://github.com/CKopoer/BiliSail/actions/runs/42491499203) 对应源码 `2e8e9c61aa1b2bdd973d1334229b884077e4bfdd`，总墙钟 **29:01**，比上轮少 2:12。全部检查和六个构建目标通过，根应用／独立包／原生 mux 合计 6,003 项测试通过、6 项环境跳过。Windows ARM64 的 Flutter Release 编译已成功、编译错误为零，随后 staging 架构检查拒绝了 x64 `vcruntime140_1.dll`，因此仍未生成 ARM64 安装包。上轮 SMTC 协程定义已生效；WebView 的 `/MP2` 也已出现在实际编译命令，x64／ARM64 编译阶段分别约 3:31／3:27，上轮为 5:32／6:07。两次并非严格同源码性能对照。
+[CI 42491499203](https://github.com/ZakiuC/BiliSail/actions/runs/42491499203) 对应源码 `2e8e9c61aa1b2bdd973d1334229b884077e4bfdd`，总墙钟 **29:01**，比上轮少 2:12。全部检查和六个构建目标通过，根应用／独立包／原生 mux 合计 6,003 项测试通过、6 项环境跳过。Windows ARM64 的 Flutter Release 编译已成功、编译错误为零，随后 staging 架构检查拒绝了 x64 `vcruntime140_1.dll`，因此仍未生成 ARM64 安装包。上轮 SMTC 协程定义已生效；WebView 的 `/MP2` 也已出现在实际编译命令，x64／ARM64 编译阶段分别约 3:31／3:27，上轮为 5:32／6:07。两次并非严格同源码性能对照。
 
 旧打包入口只依据 Visual Studio CRT 目录名选择目标，然后复制目录内全部 DLL，未逐项验证，且原日志没有记录 CRT 源路径。此次增加[运行库选择入口](../../tool/windows-runtime.ps1)，在严格 Pub 解析之后、mux／Flutter 应用编译之前完成预检，打印每个选中或排除文件的完整来源。每个文件先读取实际 PE 架构；ARM64 仅排除实际为 x64 的 `vcruntime140_1.dll`，其他架构不符或损坏文件一律失败。x64 继续要求该文件；两种目标均要求 `msvcp140.dll`、`vcruntime140.dll`，并保留目录中其他架构匹配的 CRT 文件。MSI 与预检共用同一份必需文件规则，最终整包 EXE／DLL 架构校验仍在签名前执行，不对插件或其他外来 DLL 放宽检查。
 
@@ -175,7 +175,7 @@ Windows／Flutter 3.50.0 的 `tool/check.ps1 -SkipPub` 完整通过：格式、�
 
 ## 2026-11-09：检查并行、原生缓存与脚本简化
 
-[CI 42494944119](https://github.com/CKopoer/BiliSail/actions/runs/42494944119) 的七个平台与全部检查已通过，ARM64 CRT 筛选修复已验证。总墙钟 32:42，构建开始前约 9:15；macOS Intel 23:23、Windows ARM64 20:10 是最长两项。本轮据此一次性调整以下内容，实际收益以新提交的远端运行确认，不沿用历史通过结果。
+[CI 42494944119](https://github.com/ZakiuC/BiliSail/actions/runs/42494944119) 的七个平台与全部检查已通过，ARM64 CRT 筛选修复已验证。总墙钟 32:42，构建开始前约 9:15；macOS Intel 23:23、Windows ARM64 20:10 是最长两项。本轮据此一次性调整以下内容，实际收益以新提交的远端运行确认，不沿用历史通过结果。
 
 - 构建矩阵等待 lint、包测试与原生 mux 回归后启动，与四份根测试并行。必需状态 `Analyze and test` 仍汇总全部检查；整个复用工作流和 Release 的检查／来源／签名校验不变。根测试失败时已经启动的构建可能消耗额外 runner 时间，产物不会因此获得 Release 复用资格。按旧日志估算可重叠约 6:26，此为依赖图推算，不是新运行测量。
 - 新增精确 mux 组件缓存：身份包含原生源文件、构建／framework 脚本、目标、宿主、编译器、Windows MSYS2 包版本或 Android NDK／Apple SDK build／Linux链接器信息。只保存最终 `native/prebuilt/<target>`，每文件摘要、文件集合与实际二进制架构均验证；不跨键回退。失效后从源码重建，默认分支可退休损坏的同键快照；PR／分支不删除共享缓存。每目标保留一个代际，80 MB 的未压缩组件上限配合 100 MB 上传预留，沿用 9 GB 总预算，不驱逐另一类有效 SDK。Linux 由原生回归唯一写入；原生回归始终执行，不将测试成功作为缓存命中推断。
@@ -189,7 +189,7 @@ Windows／Flutter 3.50.0 的 `tool/check.ps1 -SkipPub` 完整通过：格式、�
 
 ## 2026-11-09：Windows SDK 解压与编译并行度
 
-[CI 42502005242](https://github.com/CKopoer/BiliSail/actions/runs/42502005242) 对应提交 `2c9f6e629d188d3419e6998125912a99b3bc903a`，最终全部检查和七个平台通过，总墙钟 **24:37**，比上一轮 32:42 少 **8:05**。构建矩阵在运行开始约 2:46 后启动，根测试最晚约 9:06 才完成，检查与构建已实际重叠；macOS x64 在 Apple Silicon 上生成并通过现有静态校验，耗时 **8:00**，上轮 Intel runner 为 23:23，不代表 Intel 实机验证。
+[CI 42502005242](https://github.com/ZakiuC/BiliSail/actions/runs/42502005242) 对应提交 `2c9f6e629d188d3419e6998125912a99b3bc903a`，最终全部检查和七个平台通过，总墙钟 **24:37**，比上一轮 32:42 少 **8:05**。构建矩阵在运行开始约 2:46 后启动，根测试最晚约 9:06 才完成，检查与构建已实际重叠；macOS x64 在 Apple Silicon 上生成并通过现有静态校验，耗时 **8:00**，上轮 Intel runner 为 23:23，不代表 Intel 实机验证。
 
 | 构建 | 本轮墙钟 | 观察 |
 | --- | --- | --- |
@@ -210,7 +210,7 @@ Windows MSVC／Visual Studio 下，CI 的 runner 与 WebView 私有 `/MP` 并行
 
 ## 2026-11-09：暖 mux 跳过工具链与打包去重
 
-[CI 42505582201](https://github.com/CKopoer/BiliSail/actions/runs/42505582201)，提交 `3f7d516aa620b00821c993c5e4fe0b5c8da91e58`，全部检查及七个平台构建通过；总墙钟 **17:27**，上一轮 **24:37**。Windows ARM64／x64 为 **14:34／11:23**，Linux **8:49**，macOS ARM64／x64 为 **7:21／7:15**，iOS **5:47**，Android **5:26**。Windows ARM64 的 mux 准备从 242.1 秒降到 8.6 秒，SDK／Pub 准备从 194 秒降到 127 秒，Flutter Windows 构建从 500.5 秒降到 402.7 秒；缓存命中、原生解压和 `/MP4` 均已实际执行，单次 runner 波动不作为严格 A/B 因果结论。
+[CI 42505582201](https://github.com/ZakiuC/BiliSail/actions/runs/42505582201)，提交 `3f7d516aa620b00821c993c5e4fe0b5c8da91e58`，全部检查及七个平台构建通过；总墙钟 **17:27**，上一轮 **24:37**。Windows ARM64／x64 为 **14:34／11:23**，Linux **8:49**，macOS ARM64／x64 为 **7:21／7:15**，iOS **5:47**，Android **5:26**。Windows ARM64 的 mux 准备从 242.1 秒降到 8.6 秒，SDK／Pub 准备从 194 秒降到 127 秒，Flutter Windows 构建从 500.5 秒降到 402.7 秒；缓存命中、原生解压和 `/MP4` 均已实际执行，单次 runner 波动不作为严格 A/B 因果结论。
 
 本轮基于剩余热点作以下调整：
 
@@ -314,7 +314,7 @@ Release 草稿及全部附件上传成功后，使用 GitHub 官方 [actions/git
 
 ## Release #82：复用产物的分页返回结构（2026-10-31）
 
-[失败任务](https://github.com/CKopoer/BiliSail/actions/runs/41215540020/job/124579168305) 对应提交 `266d33fb7132e00bcd7299df5bdb78c1a1785769`、版本 `1.2.6+0`，开启了 `reuse_ci_build`。版本与平台解析成功，随后 `planReleaseBuilds` 在读取第一页时抛出 `TypeError: page.data.workflow_runs is not iterable`，构建和草稿任务均被跳过。同提交的 [CI #254](https://github.com/CKopoer/BiliSail/actions/runs/41213220364) 已通过共享检查和六个目标构建，查询时六份版本化产物均非空且未过期。
+[失败任务](https://github.com/ZakiuC/BiliSail/actions/runs/41215540020/job/124579168305) 对应提交 `266d33fb7132e00bcd7299df5bdb78c1a1785769`、版本 `1.2.6+0`，开启了 `reuse_ci_build`。版本与平台解析成功，随后 `planReleaseBuilds` 在读取第一页时抛出 `TypeError: page.data.workflow_runs is not iterable`，构建和草稿任务均被跳过。同提交的 [CI #254](https://github.com/ZakiuC/BiliSail/actions/runs/41213220364) 已通过共享检查和六个目标构建，查询时六份版本化产物均非空且未过期。
 
 根因是混用了原始 REST 响应与 Octokit 分页器的返回结构。REST 返回 `{ total_count, workflow_runs }`，但 [`paginate.iterator`](https://github.com/octokit/plugin-paginate-rest.js#octokitpaginateiterator) 已将集合解包为 `page.data` 数组；原脚本又读取 `.workflow_runs`，得到 `undefined`。修复直接遍历 `page.data`，同步纠正测试替身的结构，并覆盖空页、跨页查找、全部命中后停止，以及首个／后续分页错误继续阻断发布。原有同提交、同版本、检查与目标任务成功、来源和 SHA-256 校验门槛保持不变。
 
@@ -326,7 +326,7 @@ Release 草稿及全部附件上传成功后，使用 GitHub 官方 [actions/git
 
 ## Release #98：计时参数遮蔽源码归档名称（2026-11-09）
 
-[Release #98](https://github.com/CKopoer/BiliSail/actions/runs/42547796564/job/128936539304) 对应提交 `292befa86e68d017838fe3aa6e629b3dbda10083`、版本 `1.2.9+0`。同提交的 [CI](https://github.com/CKopoer/BiliSail/actions/runs/42545056116) 及七个平台构建通过；Release 下载 Android 复用产物后，解压 Windows x64 产物因 `Mux source archive.mux-source.zip` 已存在而失败，尚未执行来源校验及草稿创建。实际 Android artifact 也包含该错误文件名及其校验文件。
+[Release #98](https://github.com/ZakiuC/BiliSail/actions/runs/42547796564/job/128936539304) 对应提交 `292befa86e68d017838fe3aa6e629b3dbda10083`、版本 `1.2.9+0`。同提交的 [CI](https://github.com/ZakiuC/BiliSail/actions/runs/42545056116) 及七个平台构建通过；Release 下载 Android 复用产物后，解压 Windows x64 产物因 `Mux source archive.mux-source.zip` 已存在而失败，尚未执行来源校验及草稿创建。实际 Android artifact 也包含该错误文件名及其校验文件。
 
 新增的 [构建计时函数](../../tool/build-stage.ps1) 使用 `$Name` 参数，PowerShell 不区分变量名大小写，脚本块执行时该参数遮蔽了 [打包入口](../../tool/build-release.ps1) 的 `$name`。源码归档因此采用阶段名，丢失版本和目标前缀。现将参数改为 `$StageName`，恢复 `BiliSail-<version>-<target>.mux-source.zip` 命名，保持阶段日志、返回值、异常、文件集合和 SHA-256 校验规则。
 
@@ -338,9 +338,9 @@ Release 草稿及全部附件上传成功后，使用 GitHub 官方 [actions/git
 
 ## Release 产物混入 Windows 安装器中间文件（2026-11-01）
 
-[失败任务](https://github.com/CKopoer/BiliSail/actions/runs/41220937672/job/124595231809) 对应提交 `463358953dec5832ed29a831593ab0a1dd88dabd`、版本 `1.2.6+0`。六个目标都成功复用同提交的 [CI 41218198314](https://github.com/CKopoer/BiliSail/actions/runs/41218198314)；下载成功后，`verifyReleaseAssets` 因文件集合不符而停止，未执行草稿创建。
+[失败任务](https://github.com/ZakiuC/BiliSail/actions/runs/41220937672/job/124595231809) 对应提交 `463358953dec5832ed29a831593ab0a1dd88dabd`、版本 `1.2.6+0`。六个目标都成功复用同提交的 [CI 41218198314](https://github.com/ZakiuC/BiliSail/actions/runs/41218198314)；下载成功后，`verifyReleaseAssets` 因文件集合不符而停止，未执行草稿创建。
 
-根因在 [MSI 打包辅助函数](../../tool/windows-installers.ps1)：`New-WindowsMsi` 按安装包的目标目录创建 `installer-native` 和 `installer-artwork`，把 CMake 输出、WiX SDK、辅助 DLL 与界面图片留在 `release/`。CI 上传 `release/*` 时会递归包含这些目录；[Windows 来源 job](https://github.com/CKopoer/BiliSail/actions/runs/41218198314/job/124588925880) 记录实际上传了 124 个文件，超出 Windows 约定的 12 个文件（四种分发文件、metadata、mux 源码及各自校验）。此前测试直接构造干净的产物目录，未覆盖安装器生成中间文件的行为。
+根因在 [MSI 打包辅助函数](../../tool/windows-installers.ps1)：`New-WindowsMsi` 按安装包的目标目录创建 `installer-native` 和 `installer-artwork`，把 CMake 输出、WiX SDK、辅助 DLL 与界面图片留在 `release/`。CI 上传 `release/*` 时会递归包含这些目录；[Windows 来源 job](https://github.com/ZakiuC/BiliSail/actions/runs/41218198314/job/124588925880) 记录实际上传了 124 个文件，超出 Windows 约定的 12 个文件（四种分发文件、metadata、mux 源码及各自校验）。此前测试直接构造干净的产物目录，未覆盖安装器生成中间文件的行为。
 
 修复由 [正式打包入口](../../tool/build-release.ps1) 把已有 `installer-work` 传入 `New-WindowsMsi`，原生辅助文件和图片统一放到工作目录，并与 EXE 打包复用；最终安装包仍输出到 `release/`，随安装包分发的 UI 源码、许可及 SDK 头文件仍保留在 payload。严格文件集合、SHA-256 和来源校验继续执行；[校验脚本](../../tool/release-ci-reuse.cjs) 额外列出 `Missing` 与 `Unexpected`，目录名附 `/`，便于后续定位。
 
@@ -354,7 +354,7 @@ Release 草稿及全部附件上传成功后，使用 GitHub 官方 [actions/git
 
 ### 推送后 CI 的截止时间测试时序依赖（2026-11-01）
 
-提交 `9afd4e830011ca1de18541f2544481fc8c3226b8` 的 [CI Package tests](https://github.com/CKopoer/BiliSail/actions/runs/41222589420/job/124600097842) 在 `bili_api/test/read_retry_timeout_test.dart` 失败：`remaining total deadline caps an attempt and prevents another read` 预期 1 次请求，实际 3 次；API 其余 535 项通过。该运行的格式／分析、两份根测试分片和原生 mux 回归均通过，平台构建因检查汇总失败而跳过。
+提交 `9afd4e830011ca1de18541f2544481fc8c3226b8` 的 [CI Package tests](https://github.com/ZakiuC/BiliSail/actions/runs/41222589420/job/124600097842) 在 `bili_api/test/read_retry_timeout_test.dart` 失败：`remaining total deadline caps an attempt and prevents another read` 预期 1 次请求，实际 3 次；API 其余 535 项通过。该运行的格式／分析、两份根测试分片和原生 mux 回归均通过，平台构建因检查汇总失败而跳过。
 
 原用例直接用 `DateTime.now()` 设置 250 ms 总截止时间，同时等待 VM 计时器产生请求超时，断言隐含了计时器触发时墙钟一定已越过 deadline。两者并非同一计时来源；墙钟仍早于 deadline 时，生产管线会按剩余正预算进行后续尝试，而不保证恰好只有一次。CI 日志未记录各次墙钟读数，不能还原当时的具体偏差。
 
@@ -364,13 +364,13 @@ Release 草稿及全部附件上传成功后，使用 GitHub 官方 [actions/git
 
 ### Intel macOS 打包前 GUI 验收超时（2026-11-02）
 
-[CI 41323620524](https://github.com/CKopoer/BiliSail/actions/runs/41323620524/job/124901479137) 只有 Intel macOS job 失败：Release 编译及签名已完成，两轮播放窗 Space 检查通过后，启动探测超时；其他五个平台与所有检查通过。线程采样定位到 AppKit 应用激活／WindowServer 与虚拟 GPU 等待。共享窗口激活现在仅在应用未激活时请求 `NSApp.activate`，并补充窗口再激活和回收阶段记录；完整证据、修复范围及本机验证边界见[启动专项](macos-release-startup.md#2026-11-02intel-重复应用激活与图形等待)。原有发布验收与超时门槛继续保留，新的 Intel 原生运行结果仍待对应 CI 复验。
+[CI 41323620524](https://github.com/ZakiuC/BiliSail/actions/runs/41323620524/job/124901479137) 只有 Intel macOS job 失败：Release 编译及签名已完成，两轮播放窗 Space 检查通过后，启动探测超时；其他五个平台与所有检查通过。线程采样定位到 AppKit 应用激活／WindowServer 与虚拟 GPU 等待。共享窗口激活现在仅在应用未激活时请求 `NSApp.activate`，并补充窗口再激活和回收阶段记录；完整证据、修复范围及本机验证边界见[启动专项](macos-release-startup.md#2026-11-02intel-重复应用激活与图形等待)。原有发布验收与超时门槛继续保留，新的 Intel 原生运行结果仍待对应 CI 复验。
 
-后续 [CI 41436650047](https://github.com/CKopoer/BiliSail/actions/runs/41436650047/job/125252164120) 仍在第二轮窗口回收时耗尽 60 秒总预算；上一次成功运行的同类回收单次就耗时约 30.8 秒。本轮将共享校验入口的组合 GUI `startup` 预算独立设为 180 秒，凭据执行仍为 60 秒，原生启动仍为 180 秒；保留完整断言和独立硬超时，不自动重试。两份工作流的构建步骤／job 上限继续为 30／40 分钟。证据、父进程与 worker 预算传递及远端验证边界见[组合 GUI 执行预算](macos-release-startup.md#2026-11-02组合-gui-检查的执行预算)。
+后续 [CI 41436650047](https://github.com/ZakiuC/BiliSail/actions/runs/41436650047/job/125252164120) 仍在第二轮窗口回收时耗尽 60 秒总预算；上一次成功运行的同类回收单次就耗时约 30.8 秒。本轮将共享校验入口的组合 GUI `startup` 预算独立设为 180 秒，凭据执行仍为 60 秒，原生启动仍为 180 秒；保留完整断言和独立硬超时，不自动重试。两份工作流的构建步骤／job 上限继续为 30／40 分钟。证据、父进程与 worker 预算传递及远端验证边界见[组合 GUI 执行预算](macos-release-startup.md#2026-11-02组合-gui-检查的执行预算)。
 
 ### CI #293：字体选择测试点击屏幕外控件（2026-11-05）
 
-[CI #293](https://github.com/CKopoer/BiliSail/actions/runs/41876045873) 对应提交 `55601c393ea093ebe65c2759ac607f51df6206ec`。唯一失败的 [Root app tests (shard 0)](https://github.com/CKopoer/BiliSail/actions/runs/41876045873/job/126735823585) 中，`font_selection_test.dart` 的 `appearance saves bundled and installed fonts independently` 点击未命中，预期保存 `HarmonyOS Sans`，实际仍为 `null`；该分片通过 2159 项、失败 1 项、跳过 2 项。格式／分析、另一根测试分片、包测试及原生 mux 回归均通过，检查汇总随之失败，平台构建被跳过。
+[CI #293](https://github.com/ZakiuC/BiliSail/actions/runs/41876045873) 对应提交 `55601c393ea093ebe65c2759ac607f51df6206ec`。唯一失败的 [Root app tests (shard 0)](https://github.com/ZakiuC/BiliSail/actions/runs/41876045873/job/126735823585) 中，`font_selection_test.dart` 的 `appearance saves bundled and installed fonts independently` 点击未命中，预期保存 `HarmonyOS Sans`，实际仍为 `null`；该分片通过 2159 项、失败 1 项、跳过 2 项。格式／分析、另一根测试分片、包测试及原生 mux 回归均通过，检查汇总随之失败，平台构建被跳过。
 
 外观设置新增“动态页默认标签”后，界面字体选项被推到测试固定的 650 × 850 窗口下方；原测试直接点击文字中心 `(155.7, 855.0)`，未先滚动。Windows 本机原用例复现了相同坐标及断言失败，确认这不是字体保存逻辑的错误。修复在三处入口选择内置字体前调用 `ensureVisible`，等待滚动结束并断言目标可命中，再执行真实点击；继续验证字体保存及界面／弹幕偏好相互独立，不扩大测试窗口或放宽保存断言。
 
@@ -407,7 +407,7 @@ PR 不接收长期签名 Secrets，仅通过 `-AndroidPreviewSigning` 显式启�
 - 在独立检出中生成 `0.3.0+1` 的 arm64 release APK；实际 application ID 为 `dev.bilisail.bilisail`、versionCode 为 `2001`、最低 API 为 `24`。APK 签名、固定证书指纹、单 arm64 ABI、metadata 与 SHA-256 校验通过，包内无 keystore／密码文件，临时签名目录已清理。
 - 本地首次构建受其他开发操作生成的 dev-only 插件注册文件干扰；独立检出的 SQLite 原生资产下载另遇 TLS 连接中断，随后复用经包内固定 SHA-256 验证的缓存完成构建，未改 TLS 验证或生成源码。真实 Android 设备安装、旧临时签名切换与固定签名下的覆盖升级尚未实测。
 
-后续验证修正：远端 [CI 37578713971](https://github.com/CKopoer/BiliSail/actions/runs/37578713971/job/112654748403) 已生成 APK，但原先按人类可读摘要行解析证书的检查失败，未上传 Android 产物。改为读取标准 PEM 证书并自行计算指纹，新增格式变化、重复摘要行和非法证书覆盖；21 项签名边界检查与本机实际 APK 证书校验通过。修复后的远端 CI 结果尚待确认。
+后续验证修正：远端 [CI 37578713971](https://github.com/ZakiuC/BiliSail/actions/runs/37578713971/job/112654748403) 已生成 APK，但原先按人类可读摘要行解析证书的检查失败，未上传 Android 产物。改为读取标准 PEM 证书并自行计算指纹，新增格式变化、重复摘要行和非法证书覆盖；21 项签名边界检查与本机实际 APK 证书校验通过。修复后的远端 CI 结果尚待确认。
 
 ## Android 本地开发测试别名（2026-10-26）
 
@@ -433,7 +433,7 @@ PR 不接收长期签名 Secrets，仅通过 `-AndroidPreviewSigning` 显式启�
 
 ### BiliMux framework 版本化布局修复（2026-11-07）
 
-[CI 42354013460 的 macOS arm64 job](https://github.com/CKopoer/BiliSail/actions/runs/42354013460/job/128350423542) 构建提交 `b410d075c7f95ba22d19483dc2cb205ea7f68467` 时，已成功选择 Xcode 26.2／Swift 6.2.3，但在 Runner 的 framework 校验阶段失败：`BiliMux.framework` 的根目录包含 `Info.plist`，Xcode 要求非扁平 macOS bundle 的 plist 位于 `Versions/Current/Resources/Info.plist`。原[打包脚本](../../packages/bili_mux/tool/package-apple-framework.sh)对 macOS 仅增加 `Resources/` 存放许可与来源，二进制和 plist 仍在根目录；原目录测试也错误地要求所有平台都不存在 `Versions/`，因此未发现布局问题。
+[CI 42354013460 的 macOS arm64 job](https://github.com/ZakiuC/BiliSail/actions/runs/42354013460/job/128350423542) 构建提交 `b410d075c7f95ba22d19483dc2cb205ea7f68467` 时，已成功选择 Xcode 26.2／Swift 6.2.3，但在 Runner 的 framework 校验阶段失败：`BiliMux.framework` 的根目录包含 `Info.plist`，Xcode 要求非扁平 macOS bundle 的 plist 位于 `Versions/Current/Resources/Info.plist`。原[打包脚本](../../packages/bili_mux/tool/package-apple-framework.sh)对 macOS 仅增加 `Resources/` 存放许可与来源，二进制和 plist 仍在根目录；原目录测试也错误地要求所有平台都不存在 `Versions/`，因此未发现布局问题。
 
 macOS 两种架构的 CocoaPods framework 现在采用 [Apple 版本化结构](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPFrameworks/Concepts/FrameworkAnatomy.html)：二进制位于 `Versions/A/BiliMux`，plist 和许可／来源／构建配置位于 `Versions/A/Resources/`，`Versions/Current` 链接到 `A`，根目录 `BiliMux`／`Resources` 链接到当前版本；不生成根目录 plist。原有 FFI 加载入口仍可通过二进制链接访问。iOS 保持扁平 bundle。打包时继续完整替换本包输出，清除旧目录和签名，兼容重复构建及 macOS 架构切换；不修改 Pub 缓存或播放器原生依赖。
 
@@ -445,7 +445,7 @@ Windows／Flutter 3.47.6 的 `tool/check.ps1 -SkipPub` 通过打包边界、格�
 
 macOS 分别生成 `BiliSail-<version>-macos-arm64.dmg` 和 `BiliSail-<version>-macos-x64.dmg`，按 Apple Silicon／Intel 芯片选择。脚本用 `lipo -verify_arch` 核对主程序、App、FlutterMacOS 与 BiliMux framework 的目标架构，再使用 `ditto` 复制完整 `BiliSail.app`，调用 [macOS 发布验证](../../tool/macos-release-validation.ps1) 校验签名、最终权限和可执行文件。arm64 继续启动待打包的 Release 应用验证首帧、窗口交互和跨进程 Keychain 读写／删除；2026-11-02 起按用户要求，x64 不运行这些 smoke，明确记录跳过。通过所选门槛后在镜像根目录加入指向 `/Applications` 的符号链接与 `THIRD_PARTY_NOTICES.md`，使用 `hdiutil create -srcfolder ... -fs HFS+ -format UDZO` 创建压缩只读镜像并执行 `hdiutil verify`；任一保留步骤失败均停止，不上传产物。CI 与 Release 共用此脚本，现有上传通配符同时覆盖两种架构的 DMG、metadata、mux 源码和 SHA-256 文件。
 
-2026-10-29 增加 Intel macOS 构建：下载封装组件新增 `macos-x64` 目标，FFmpeg 与 C++ 包装均以 `x86_64`、最低 macOS 12 编译，并沿用独立目标目录、来源归档和 framework 打包流程。最终 [CI #221](https://github.com/CKopoer/BiliSail/actions/runs/40804720827)（代码提交 `64acaa709315b9c91e15c67ae173f56b05689570`）的 Intel／arm64 hosted 构建、签名校验、待打包应用首帧、跨进程合成 Keychain 读写／删除和 DMG 校验均通过。该次运行全部检查及六个平台构建通过，产物均已上传；实际 DMG 安装升级、Gatekeeper、真实账号、音视频播放与设备操作仍待验收。兼容修复与本地检查见 [Native Assets 迁移记录](../predidit-media-migration.md#ci-构建兼容修复2026-10-29)。
+2026-10-29 增加 Intel macOS 构建：下载封装组件新增 `macos-x64` 目标，FFmpeg 与 C++ 包装均以 `x86_64`、最低 macOS 12 编译，并沿用独立目标目录、来源归档和 framework 打包流程。最终 [CI #221](https://github.com/ZakiuC/BiliSail/actions/runs/40804720827)（代码提交 `64acaa709315b9c91e15c67ae173f56b05689570`）的 Intel／arm64 hosted 构建、签名校验、待打包应用首帧、跨进程合成 Keychain 读写／删除和 DMG 校验均通过。该次运行全部检查及六个平台构建通过，产物均已上传；实际 DMG 安装升级、Gatekeeper、真实账号、音视频播放与设备操作仍待验收。兼容修复与本地检查见 [Native Assets 迁移记录](../predidit-media-migration.md#ci-构建兼容修复2026-10-29)。
 
 本地定向验证：两份工作流通过 actionlint 1.7.12，修改的 PowerShell／Bash 脚本通过语法检查。执行生产矩阵生成片段，32 种平台开关组合均符合预期；使用 fake 原生命令执行两个 macOS 打包分支，覆盖架构参数、四份二进制架构门槛、metadata、启动验证和 DMG 校验，架构失败会阻止后续打包。mux 的 macOS arm64／x64 与 iOS arm64 编译参数通过 fake Xcode 路径检查；现有 Apple framework 回归扩展覆盖 Intel 及架构切换后的重复打包，实际文件目录检查通过。两种 macOS 发布目标均在 Windows 主机上提前拒绝构建。
 
@@ -494,7 +494,7 @@ macOS ad-hoc 签名不能替代 Developer ID / notarization。资源许可范围
 
 ### 播放页快捷键测试超时修复（2026-10-07）
 
-[CI #23](https://github.com/CKopoer/BiliSail/actions/runs/37637676303/job/112848184331) 使用提交 `0b2605efe9fdb6fc5a30e7e8a920c47ba2540958`，依赖强校验、格式与静态分析通过；根应用测试 1292 项通过、1 项失败，后续包检查与三端构建未执行。失败位于 [播放面板测试](../../test/features/playback/playback_panel_test.dart) 的 `workspace player keys work on entry and after returning to video`，首次进入播放页的 `pumpAndSettle` 超时。
+[CI #23](https://github.com/ZakiuC/BiliSail/actions/runs/37637676303/job/112848184331) 使用提交 `0b2605efe9fdb6fc5a30e7e8a920c47ba2540958`，依赖强校验、格式与静态分析通过；根应用测试 1292 项通过、1 项失败，后续包检查与三端构建未执行。失败位于 [播放面板测试](../../test/features/playback/playback_panel_test.dart) 的 `workspace player keys work on entry and after returning to video`，首次进入播放页的 `pumpAndSettle` 超时。
 
 该测试的播放会话默认以真实 `Stopwatch` 驱动弹幕插值，[弹幕控制器](../../packages/bili_danmaku/lib/src/danmaku_controller.dart) 在最近播放状态更新后的 700 毫秒内保持动画，[绘制层](../../packages/bili_danmaku/lib/src/danmaku_overlay.dart) 持续请求下一帧。`pumpAndSettle` 推进 Flutter 测试的模拟时间，两者不共用时钟；快速执行的 runner 可在真实插值窗口结束前耗尽模拟的十分钟超时。本机旧测试单独通过，注入固定单调时钟、让插值保持活跃后，稳定复现同一行的超时。
 
@@ -541,7 +541,7 @@ macOS ad-hoc 签名不能替代 Developer ID / notarization。资源许可范围
 
 ### 首次远端运行的包源修复
 
-[CI #1](https://github.com/CKopoer/BiliSail/actions/runs/37405976185) 使用提交 `415b054698f3a0357b90c4498ef4d4c8d70a2e3c`，版本与平台解析通过；Ubuntu 的 `Analyze and test` 在根应用 `flutter pub get --enforce-lockfile` 阶段以退出码 65 失败，分析、测试及三端构建尚未执行。
+[CI #1](https://github.com/ZakiuC/BiliSail/actions/runs/37405976185) 使用提交 `415b054698f3a0357b90c4498ef4d4c8d70a2e3c`，版本与平台解析通过；Ubuntu 的 `Analyze and test` 在根应用 `flutter pub get --enforce-lockfile` 阶段以退出码 65 失败，分析、测试及三端构建尚未执行。
 
 根锁文件的 119 个 hosted 依赖均来自 `pub.flutter-io.cn`，三个包锁文件也使用此镜像；本机设置了 `PUB_HOSTED_URL`，初版 CI 未设置，因而使用默认 `pub.dev`。包源身份变化使 pub 重新解析依赖，日志出现 `Would change 119 dependencies` 和 `Unable to satisfy pubspec.yaml using pubspec.lock`。修复在 CI 工作流顶层显式设置相同包源，覆盖检查与构建任务；沿用已验证的锁定版本和内容哈希。
 
@@ -549,7 +549,7 @@ macOS ad-hoc 签名不能替代 Developer ID / notarization。资源许可范围
 
 ### 干净检出时的子包依赖初始化修复
 
-[CI #2](https://github.com/CKopoer/BiliSail/actions/runs/37407053988/job/112086879462) 使用提交 `8b120ebccee92dccfbf27bc0c4371c92113cfd37`，镜像配置已生效，根依赖安装和格式检查通过；根 `flutter analyze` 在 `packages/bili_api/test` 中找不到 `package:test/test.dart`，产生 1304 条连带诊断，测试及构建尚未执行。
+[CI #2](https://github.com/ZakiuC/BiliSail/actions/runs/37407053988/job/112086879462) 使用提交 `8b120ebccee92dccfbf27bc0c4371c92113cfd37`，镜像配置已生效，根依赖安装和格式检查通过；根 `flutter analyze` 在 `packages/bili_api/test` 中找不到 `package:test/test.dart`，产生 1304 条连带诊断，测试及构建尚未执行。
 
 根应用的 `pub get` 不会安装 path 依赖包的 `dev_dependencies`，参见 [Dart 开发依赖说明](https://dart.dev/tools/pub/dependencies#dev-dependencies)。原脚本在根分析后才逐个安装子包依赖；本机已有的子包 `.dart_tool/package_config.json` 掩盖了此问题。修复将根及三个包的依赖安装全部放到任何分析和测试之前，再分别执行完整检查；四次安装均保留锁文件强校验，`-SkipPub` 仍只跳过安装阶段。
 
@@ -559,10 +559,10 @@ macOS ad-hoc 签名不能替代 Developer ID / notarization。资源许可范围
 
 ### Windows SDK 初始化与 macOS 架构检查修复
 
-[CI #3](https://github.com/CKopoer/BiliSail/actions/runs/37408314360) 使用提交 `7c8684c8a6ea1dbb9aaacbb1ca723e3a5919f272`，Ubuntu 的完整分析与测试通过，进入三端构建。
+[CI #3](https://github.com/ZakiuC/BiliSail/actions/runs/37408314360) 使用提交 `7c8684c8a6ea1dbb9aaacbb1ca723e3a5919f272`，Ubuntu 的完整分析与测试通过，进入三端构建。
 
-- [Windows 日志](https://github.com/CKopoer/BiliSail/actions/runs/37408314360/job/112092222074)：首次执行 `flutter --version --machine` 触发 SDK 内部 `pub upgrade`，其初始化输出混入标准输出，`ConvertFrom-Json` 在真正构建前失败。检查和构建脚本均先单独执行 `flutter --version` 并检查退出码，再捕获版本 JSON，避免依赖已初始化的本机 SDK。
-- [macOS 日志](https://github.com/CKopoer/BiliSail/actions/runs/37408314360/job/112092222062)：已编译出 `BiliSail.app`，随后 `lipo -verify_arch arm64 <file>` 将文件路径误当成架构名称而失败。Apple 的 `-verify_arch` 会消费后续所有架构参数，修复为 `lipo <file> -verify_arch arm64`；继续保留架构校验。
+- [Windows 日志](https://github.com/ZakiuC/BiliSail/actions/runs/37408314360/job/112092222074)：首次执行 `flutter --version --machine` 触发 SDK 内部 `pub upgrade`，其初始化输出混入标准输出，`ConvertFrom-Json` 在真正构建前失败。检查和构建脚本均先单独执行 `flutter --version` 并检查退出码，再捕获版本 JSON，避免依赖已初始化的本机 SDK。
+- [macOS 日志](https://github.com/ZakiuC/BiliSail/actions/runs/37408314360/job/112092222062)：已编译出 `BiliSail.app`，随后 `lipo -verify_arch arm64 <file>` 将文件路径误当成架构名称而失败。Apple 的 `-verify_arch` 会消费后续所有架构参数，修复为 `lipo <file> -verify_arch arm64`；继续保留架构校验。
 
 本轮验证：两份脚本的旧逻辑均复现冷启动 JSON 失败，新逻辑均进入依赖安装，初始化失败的退出码也正确传播；共 6 个模拟 CLI 场景通过。`tool/check.ps1 -EnforceLockfile` 的全部格式、分析及 838 项测试通过，四份锁文件未变。Windows 实际执行 `tool/build-release.ps1 -Target windows-x64 -Version 0.1.0+1`，Release 编译、MakeAppx 打包及临时证书签名通过；包内容、manifest 和 3 份产物的 SHA-256 通过。旧输出目录已保存在 `artifacts/windows-x64-before-cli-fix-*/`，新输出仍位于 `artifacts/windows-x64/release/`。本机包基于 `7c8684c` 加本轮未提交修复，metadata 标记 `sourceDirty=true`。
 
@@ -570,14 +570,14 @@ macOS 命令在本机用 LLVM lipo 对真实 arm64 Mach-O fixture 验证通过�
 
 ### 三端远端复验通过
 
-[CI #4](https://github.com/CKopoer/BiliSail/actions/runs/37409580779) 在 2026-10-06 对修复提交 `d818c8a8603f129b704b2e2238fc54ede88bded3` 全部通过，三个平台产物均已上传：
+[CI #4](https://github.com/ZakiuC/BiliSail/actions/runs/37409580779) 在 2026-10-06 对修复提交 `d818c8a8603f129b704b2e2238fc54ede88bded3` 全部通过，三个平台产物均已上传：
 
 | 任务 | 验证结果 |
 | --- | --- |
-| [Ubuntu 完整检查](https://github.com/CKopoer/BiliSail/actions/runs/37409580779/job/112094826410) | 根应用及三个包的依赖强校验、格式、分析和测试通过 |
-| [Windows x64](https://github.com/CKopoer/BiliSail/actions/runs/37409580779/job/112095782197) | 冷启动版本读取、Release 编译、MSIX 打包与临时证书签名、产物上传通过 |
-| [macOS arm64](https://github.com/CKopoer/BiliSail/actions/runs/37409580779/job/112095782269) | Xcode 编译、Apple lipo 架构校验、ZIP 打包与上传通过 |
-| [Android arm64](https://github.com/CKopoer/BiliSail/actions/runs/37409580779/job/112095782290) | Release split APK、单 arm64 ABI 断言、打包与上传通过 |
+| [Ubuntu 完整检查](https://github.com/ZakiuC/BiliSail/actions/runs/37409580779/job/112094826410) | 根应用及三个包的依赖强校验、格式、分析和测试通过 |
+| [Windows x64](https://github.com/ZakiuC/BiliSail/actions/runs/37409580779/job/112095782197) | 冷启动版本读取、Release 编译、MSIX 打包与临时证书签名、产物上传通过 |
+| [macOS arm64](https://github.com/ZakiuC/BiliSail/actions/runs/37409580779/job/112095782269) | Xcode 编译、Apple lipo 架构校验、ZIP 打包与上传通过 |
+| [Android arm64](https://github.com/ZakiuC/BiliSail/actions/runs/37409580779/job/112095782290) | Release split APK、单 arm64 ABI 断言、打包与上传通过 |
 
 **设备与发行未测**：macOS 启动、MSIX 安装/卸载/升级、正式 PFX 签名、Android 真机播放与签名升级。未创建或公开远端 Release；三端构建成功不能代替播放、设备与发行验收，M0 尚未全部完成。
 
@@ -648,14 +648,14 @@ Android 构建输出 CupertinoIcons 字体声明警告，Windows 构建输出 `f
 
 本次仅将 CI 和五份锁文件中的 hosted 源从 `https://pub.flutter-io.cn` 迁移到 `https://pub.dev`，保留各依赖版本、约束和内容 SHA-256；不执行 `pub upgrade`，应用版本保持 `0.5.6+2`。根锁文件迁移 128 个 hosted 条目，`bili_api` 50 个、`bili_player` 57 个、`bili_danmaku` 23 个、`bili_mux` 24 个。历史镜像配置和失败记录保留在上文，不能视为当前配置。
 
-[Dependabot PR #5](https://github.com/CKopoer/BiliSail/pull/5) 同时包含包源及 drift/间接依赖升级；本次没有合并或照搬该 PR 的锁文件。此前其 CI 的来源冲突发生于镜像环境与官方来源锁文件之间；统一官方源后仍需分别检查后续 PR 的依赖变更和 CI 结果。
+[Dependabot PR #5](https://github.com/ZakiuC/BiliSail/pull/5) 同时包含包源及 drift/间接依赖升级；本次没有合并或照搬该 PR 的锁文件。此前其 CI 的来源冲突发生于镜像环境与官方来源锁文件之间；统一官方源后仍需分别检查后续 PR 的依赖变更和 CI 结果。
 
 
 迁移前后逐份解析锁文件，确认只有 282 个 hosted URL 改变，其他字段完全一致；155 个不同的已锁定包名/版本均与 `pub.dev` API 返回的 `archive_sha256` 一致，原有效哈希全部保留。工作流通过 actionlint 1.7.12。Dart 来源规范化依据固定 SDK 3.13.5 的 [DEPS](https://github.com/dart-lang/sdk/blob/3.13.5/DEPS) 所引用的 Pub 提交，不以两个官方域名的文本相等为判断标准。本地环境缺少 Flutter/PowerShell，未在本地执行固定 SDK 的解析和完整 `tool/check.ps1`；实际严格锁文件检查与三端构建由本次推送触发的 CI 验证。
 
 ### 下载速度回归测试时序修复（2026-10-11）
 
-[CI 38112987859](https://github.com/CKopoer/BiliSail/actions/runs/38112987859/job/114392259775) 的提交为 `8e74438e29b7efa0626768627408d294dc2712bb`。严格锁文件检查、格式和静态分析通过，根应用 1840 项测试通过、1 项失败；失败为 [下载仓储测试](../../test/features/downloads/sqlite_download_repository_test.dart) 的 `streaming progress publishes a nonzero transfer speed`，第 247 行预期观察到非零速度，实际为 `false`。后续包检查和三端构建因此没有执行，独立 MP4 原生回归已通过。
+[CI 38112987859](https://github.com/ZakiuC/BiliSail/actions/runs/38112987859/job/114392259775) 的提交为 `8e74438e29b7efa0626768627408d294dc2712bb`。严格锁文件检查、格式和静态分析通过，根应用 1840 项测试通过、1 项失败；失败为 [下载仓储测试](../../test/features/downloads/sqlite_download_repository_test.dart) 的 `streaming progress publishes a nonzero transfer speed`，第 247 行预期观察到非零速度，实际为 `false`。后续包检查和三端构建因此没有执行，独立 MP4 原生回归已通过。
 
 该用例使用真实服务器每隔 650 毫秒发送小块数据，并每隔 20 毫秒轮询当前状态；仓储则以客户端进度回调建立基线，至少间隔 500 毫秒才计算速度，完成时清零。服务器发送间隔不能保证客户端回调间隔，轮询也不能保证观察到短暂状态。[IOSink.flush](https://api.dart.dev/dart-io/IOSink/flush.html) 只保证底层 consumer 接受数据，不保证操作系统已发送；[HttpResponse.bufferOutput](https://api.dart.dev/dart-io/HttpResponse/bufferOutput.html) 默认开启。本机旧用例单独运行通过，但测试没有约束这些调度和缓冲条件。
 
@@ -681,7 +681,7 @@ Flutter 3.47.6 会将 Android 的 `--build-number 0` 归一化为 `1`（[固定 
 
 ## 2026-10-25：桌面原生返回测试在 Ubuntu 上等待回调
 
-[CI #130](https://github.com/CKopoer/BiliSail/actions/runs/40175802170/job/121116147931) 的提交为 `353164f7cf85f74402516f2bc7ceea961ac1a843`。根检查运行于 Ubuntu，`WindowService` 只在 Windows/macOS 注册原生返回消息处理器；播放窗测试却要求 `setBackButton` 已被调用，图片查看器和独立播放窗路由测试也直接等待原生返回回复。`ChannelBuffers.push` 会暂存没有监听器的消息，辅助函数的等待无法结束，日志中的首个图片查看器用例因此耗尽默认 10 分钟超时，后续平台构建仍被检查任务阻塞。
+[CI #130](https://github.com/ZakiuC/BiliSail/actions/runs/40175802170/job/121116147931) 的提交为 `353164f7cf85f74402516f2bc7ceea961ac1a843`。根检查运行于 Ubuntu，`WindowService` 只在 Windows/macOS 注册原生返回消息处理器；播放窗测试却要求 `setBackButton` 已被调用，图片查看器和独立播放窗路由测试也直接等待原生返回回复。`ChannelBuffers.push` 会暂存没有监听器的消息，辅助函数的等待无法结束，日志中的首个图片查看器用例因此耗尽默认 10 分钟超时，后续平台构建仍被检查任务阻塞。
 
 修复仅调整测试：共享假窗口显式提供原生返回能力，在各测试主机通过模拟平台通道验证实际的消息注册、按 view 路由及模态隔离；生产平台判断保持原值。消息辅助函数改用 `TestDefaultBinaryMessenger.handlePlatformMessage`，缺少处理器时立即报出对应 view 的错误，并解码回复以保留平台异常。新增回归覆盖不支持原生返回时的快速失败、无残留排队消息及错误回复；原有两项原生返回服务测试也可在 Ubuntu 执行。
 
@@ -689,7 +689,7 @@ Windows x64 / Flutter 3.47.6 的 61 项定向测试通过；`tool/check.ps1 -Ski
 
 ## 2026-10-25：检查并行化与根测试审查
 
-[优化前的检查任务](https://github.com/CKopoer/BiliSail/actions/runs/40189663272/job/121157790929) 约耗时 8 分 20 秒，其中根应用 2316 项测试约占 5 分 56 秒，根分析约 40 秒，四个包的格式、分析和测试合计约 60 秒。SDK 和 Pub 缓存均已命中，没有长时间卡住或超时的测试。
+[优化前的检查任务](https://github.com/ZakiuC/BiliSail/actions/runs/40189663272/job/121157790929) 约耗时 8 分 20 秒，其中根应用 2316 项测试约占 5 分 56 秒，根分析约 40 秒，四个包的格式、分析和测试合计约 60 秒。SDK 和 Pub 缓存均已命中，没有长时间卡住或超时的测试。
 
 CI 现在并行运行以下任务，全部完成后由原名 `Analyze and test` 汇总；失败、取消或跳过任一检查任务均不能让汇总通过。三个平台的构建仍依赖该汇总与独立原生 mux 回归。
 
@@ -733,7 +733,7 @@ CI 现在并行运行以下任务，全部完成后由原名 `Analyze and test` 
 
 ## 2026-11-07：Apple 构建显式选择 Xcode 26.2
 
-[CI #309](https://github.com/CKopoer/BiliSail/actions/runs/42349410990) 对应提交 `d777e06e2a1c46fc217bd05e3510dbf17cc5d1c1`。格式／分析、两份根测试分片、包测试、原生 mux 回归，以及 Windows／Android／Linux 构建通过；[macOS x64](https://github.com/CKopoer/BiliSail/actions/runs/42349410990/job/128336700736)、[macOS arm64](https://github.com/CKopoer/BiliSail/actions/runs/42349410990/job/128336700776) 和 [iOS arm64](https://github.com/CKopoer/BiliSail/actions/runs/42349410990/job/128336700765) 均在编译 `video_player_avfoundation 2.12.3` 时失败。首个错误为 `AVFactory.swift` 中 `AVAsset.load(_:isolation:)` 的 `extra argument 'isolation' in call`；`VideoPlayer.swift` 的同类错误与泛型推导错误也是这个 SDK 不匹配的结果。
+[CI #309](https://github.com/ZakiuC/BiliSail/actions/runs/42349410990) 对应提交 `d777e06e2a1c46fc217bd05e3510dbf17cc5d1c1`。格式／分析、两份根测试分片、包测试、原生 mux 回归，以及 Windows／Android／Linux 构建通过；[macOS x64](https://github.com/ZakiuC/BiliSail/actions/runs/42349410990/job/128336700736)、[macOS arm64](https://github.com/ZakiuC/BiliSail/actions/runs/42349410990/job/128336700776) 和 [iOS arm64](https://github.com/ZakiuC/BiliSail/actions/runs/42349410990/job/128336700765) 均在编译 `video_player_avfoundation 2.12.3` 时失败。首个错误为 `AVFactory.swift` 中 `AVAsset.load(_:isolation:)` 的 `extra argument 'isolation' in call`；`VideoPlayer.swift` 的同类错误与泛型推导错误也是这个 SDK 不匹配的结果。
 
 依赖由固定的 `fvp` 经 `video_player` 引入，仍由 Flutter 注册和编译 Apple 原生插件。该版本调用了带 actor isolation 参数的 AVFoundation API，但三个失败任务实际使用 Xcode 16.4／macOS 15.5 或 iOS 18.5 SDK。Apple 的 [API 声明](https://developer.apple.com/documentation/avfoundation/avasynchronouskeyvalueloading/load(_:isolation:))包含 `@backDeployed(before: macOS 26.0, iOS 26.0, ...)`；新 SDK 的编译接口和应用最低运行版本是不同约束。
 
@@ -745,7 +745,7 @@ CI／Release 工作流通过 actionlint 1.7.12；直接执行新增的生产 Bas
 
 ## 2026-11-08：窗口拖动测试补齐各平台通道
 
-[CI #321](https://github.com/CKopoer/BiliSail/actions/runs/42461627294) 对应提交 `39aa7f2c8a5107b9eadb1a99895a4f643982f827`。唯一直接失败为 [根测试分片 0](https://github.com/CKopoer/BiliSail/actions/runs/42461627294/job/128671997758) 中的 `playback caption calls target one view and stop after retirement`：等待 10 分钟后超时，该分片为 2445 项通过、1 项失败、2 项跳过。格式／分析、另一根测试分片、包测试和原生 mux 回归均通过；汇总失败，平台构建全部跳过。
+[CI #321](https://github.com/ZakiuC/BiliSail/actions/runs/42461627294) 对应提交 `39aa7f2c8a5107b9eadb1a99895a4f643982f827`。唯一直接失败为 [根测试分片 0](https://github.com/ZakiuC/BiliSail/actions/runs/42461627294/job/128671997758) 中的 `playback caption calls target one view and stop after retirement`：等待 10 分钟后超时，该分片为 2445 项通过、1 项失败、2 项跳过。格式／分析、另一根测试分片、包测试和原生 mux 回归均通过；汇总失败，平台构建全部跳过。
 
 [窗口服务测试](../../test/core/platform/window_service_test.dart) 仅模拟了 `bilisail/desktop_window`。迷你窗功能让 [窗口服务](../../lib/core/platform/window_service.dart) 在 Linux 通过 `window_manager.startDragging` 拖动窗口，测试未接管该通道，因而停在等待平台回复处。macOS 的有 view 拖动也会调用应用桌面通道，但旧测试错误地要求所有非 Windows 主机都没有调用。
 
@@ -759,7 +759,7 @@ CI／Release 工作流通过 actionlint 1.7.12；直接执行新增的生产 Bas
 
 ## 2026-11-08：Release 依赖下载超时与 Apple 框架预检
 
-[CI 42465560900](https://github.com/CKopoer/BiliSail/actions/runs/42465560900) 对应提交 `1619f79f1be4b7d47d905f72241d4919d75916a5`。格式／分析、两份根测试分片、包测试和原生 mux 回归全部成功，七个平台构建失败。直接证据分别为：
+[CI 42465560900](https://github.com/ZakiuC/BiliSail/actions/runs/42465560900) 对应提交 `1619f79f1be4b7d47d905f72241d4919d75916a5`。格式／分析、两份根测试分片、包测试和原生 mux 回归全部成功，七个平台构建失败。直接证据分别为：
 
 | 目标 | 失败位置与日志证据 |
 | --- | --- |
@@ -788,7 +788,7 @@ CI／Release 工作流通过 actionlint 1.7.12，修改的 PowerShell 通过语�
 
 ## 2026-11-08：SQLite 原生 hook 收到 504 错误页
 
-[CI 42468170432](https://github.com/CKopoer/BiliSail/actions/runs/42468170432) 对应上节修复提交 `72f7ce2547de00760b2a04eb42627e37081cd5c9`。格式／分析、包测试和 mux 原生回归通过；两份根测试分片均在启动测试前的 SQLite 原生 hook 失败，平台构建尚未执行。两次日志都报告 `libsqlite3.x64.linux.so` 实际 SHA-256 为 `bef140a1a96994029153dca8c00b1750b9a5a764fb9db2dc68d7bb40e8a29e8a`，预期为 `0f947ebe629e8d9d02d7f408bef36e056bfc63ea47e02e0d45a7bae454f04ace`。
+[CI 42468170432](https://github.com/ZakiuC/BiliSail/actions/runs/42468170432) 对应上节修复提交 `72f7ce2547de00760b2a04eb42627e37081cd5c9`。格式／分析、包测试和 mux 原生回归通过；两份根测试分片均在启动测试前的 SQLite 原生 hook 失败，平台构建尚未执行。两次日志都报告 `libsqlite3.x64.linux.so` 实际 SHA-256 为 `bef140a1a96994029153dca8c00b1750b9a5a764fb9db2dc68d7bb40e8a29e8a`，预期为 `0f947ebe629e8d9d02d7f408bef36e056bfc63ea47e02e0d45a7bae454f04ace`。
 
 已将上节实际获取的 92 字节 HTTP 504 HTML 错误页重新计算摘要，与这次 CI 的实际值完全一致，确定失败内容来自网关错误页。`sqlite3 3.7.0` 的默认 hook 未先检查 HTTP 状态，直接把响应 body 交给哈希管线，因此表现为下载文件摘要不符。上一轮修复只包围了正式构建命令，没有覆盖根测试启动前的该下载路径。
 
@@ -804,14 +804,14 @@ CI／Release 工作流通过 actionlint 1.7.12，修改的 PowerShell 通过语�
 
 ## 2026-11-08：未认证 GitHub 请求故障与 SQLite 下载对照
 
-[CI 42472383067](https://github.com/CKopoer/BiliSail/actions/runs/42472383067) 对应提交 `4f41f08260127aa8a82dc723c17ad0a2d8be99cb`。格式／分析、包测试和 mux 原生回归成功；两份根测试分片都在 SQLite 准备阶段失败，尚未开始测试。分片 0 先连接失败，随后 API 路径返回 502、503；分片 1 先连接失败，随后返回两次 504。汇总失败后平台构建全部跳过，未发现本次运行中的应用编译或业务测试失败证据。
+[CI 42472383067](https://github.com/ZakiuC/BiliSail/actions/runs/42472383067) 对应提交 `4f41f08260127aa8a82dc723c17ad0a2d8be99cb`。格式／分析、包测试和 mux 原生回归成功；两份根测试分片都在 SQLite 准备阶段失败，尚未开始测试。分片 0 先连接失败，随后 API 路径返回 502、503；分片 1 先连接失败，随后返回两次 504。汇总失败后平台构建全部跳过，未发现本次运行中的应用编译或业务测试失败证据。
 
 GitHub [官方状态 API](https://www.githubstatus.com/api/v2/incidents.json) 在 10:36 UTC（北京时间 18:36）记录 `pyynvrm1vskw`，标题为 “Increase in timeouts for some unauthenticated users”，状态为 investigating；与本次 10:40–10:41 UTC 的失败窗口重合。该通报未给出内部根因，不能据此断言所有下载入口或所有 runner 都不可用，也不能将它直接套用于更早的失败。
 
 为区分应用改动和外部路径，进行了两类远端对照：
 
-- 将最近一次完整成功的 [CI 42356243958](https://github.com/CKopoer/BiliSail/actions/runs/42356243958) 的精确提交 `8ad1f9465c424d10d9dbc8704e6130e8fbdc7e1b` 原样推至 `codex/ci-baseline-8ad1f946-20261108`，触发 [CI 42473055942](https://github.com/CKopoer/BiliSail/actions/runs/42473055942)。没有将候选修复混入旧提交；旧版同样固定 SQLite 3.7.0、Flutter 3.47.6 和 Dart 3.13.5，下载地址及 SQLite 摘要与当前一致。
-- 在独立诊断分支 `codex/ci-download-probe-20261108` 上运行 [下载对照 42473273253](https://github.com/CKopoer/BiliSail/actions/runs/42473273253)，在同一 Ubuntu 24.04 runner 并行请求三条路径，每条各两次。普通 Release 下载两次均在 0.23–0.32 秒完成；未认证 API 的元数据请求两次均在约 4.1 秒后返回 503；带本次 job 内置只读 token 的 API 路径两次均在 0.68–0.72 秒取得二进制。四份成功响应均为 1,788,664 字节，SHA-256 为锁定的 `0f947ebe629e8d9d02d7f408bef36e056bfc63ea47e02e0d45a7bae454f04ace`。诊断不输出凭据、重定向 query 或错误页正文；这组有限样本不代表持续可用性保证。
+- 将最近一次完整成功的 [CI 42356243958](https://github.com/ZakiuC/BiliSail/actions/runs/42356243958) 的精确提交 `8ad1f9465c424d10d9dbc8704e6130e8fbdc7e1b` 原样推至 `codex/ci-baseline-8ad1f946-20261108`，触发 [CI 42473055942](https://github.com/ZakiuC/BiliSail/actions/runs/42473055942)。没有将候选修复混入旧提交；旧版同样固定 SQLite 3.7.0、Flutter 3.47.6 和 Dart 3.13.5，下载地址及 SQLite 摘要与当前一致。
+- 在独立诊断分支 `codex/ci-download-probe-20261108` 上运行 [下载对照 42473273253](https://github.com/ZakiuC/BiliSail/actions/runs/42473273253)，在同一 Ubuntu 24.04 runner 并行请求三条路径，每条各两次。普通 Release 下载两次均在 0.23–0.32 秒完成；未认证 API 的元数据请求两次均在约 4.1 秒后返回 503；带本次 job 内置只读 token 的 API 路径两次均在 0.68–0.72 秒取得二进制。四份成功响应均为 1,788,664 字节，SHA-256 为锁定的 `0f947ebe629e8d9d02d7f408bef36e056bfc63ea47e02e0d45a7bae454f04ace`。诊断不输出凭据、重定向 query 或错误页正文；这组有限样本不代表持续可用性保证。
 
 这些证据支持 GitHub 未认证请求链路故障是当前下载失败的主要原因，而非文件名、摘要或 SQLite 版本错误。代码另有恢复策略问题：第一次下载失败后始终留在未认证 API，每次还重新请求元数据，无法利用已恢复的普通下载入口。本机真实冷缓存也复现了“普通入口超时 → API 504 → 再次普通下载成功”，日志为 `build/ci-42472383067-sqlite-live.log`；本机结果仅作为辅助，远端对照是主要证据。
 
@@ -819,13 +819,13 @@ GitHub [官方状态 API](https://www.githubstatus.com/api/v2/incidents.json) �
 
 本次最终修改聚焦认证路径，未增加 Actions 下载缓存或扩大重试次数。认证失败或两条下载路径均不可用时仍明确失败，不使用系统 SQLite、第三方镜像或未校验内容兜底。
 
-[HTTP 回归](../../tool/test_sqlite_assets.py) 在 Windows 和 WSL Ubuntu 22.04 均通过 17 项，覆盖普通入口恢复、API 元数据复用、认证优先及 CDN 重定向移除 token，并保留损坏内容拒绝、重试上限、截止时间、容量和七目标检查。[远端专项 42473567553](https://github.com/CKopoer/BiliSail/actions/runs/42473567553) 在相同旧版锁文件上实际通过 17 项 HTTP 回归、认证冷缓存下载、缓存复用及原生 hook 的 5 项数据库测试；该专项使用同一认证实现，之后最终版将候选重试上限从六次收敛回三次，并再次通过 Windows／WSL 的 17 项回归。专项不代表七个平台的完整构建或设备验收。
+[HTTP 回归](../../tool/test_sqlite_assets.py) 在 Windows 和 WSL Ubuntu 22.04 均通过 17 项，覆盖普通入口恢复、API 元数据复用、认证优先及 CDN 重定向移除 token，并保留损坏内容拒绝、重试上限、截止时间、容量和七目标检查。[远端专项 42473567553](https://github.com/ZakiuC/BiliSail/actions/runs/42473567553) 在相同旧版锁文件上实际通过 17 项 HTTP 回归、认证冷缓存下载、缓存复用及原生 hook 的 5 项数据库测试；该专项使用同一认证实现，之后最终版将候选重试上限从六次收敛回三次，并再次通过 Windows／WSL 的 17 项回归。专项不代表七个平台的完整构建或设备验收。
 
 Windows x64／Flutter 3.47.6 的 `tool/check.ps1 -EnforceLockfile` 完整通过五份锁文件严格解析、打包边界、格式、静态分析及 5964 项 Dart／Flutter 测试（根应用 4729、API 719、播放器 350、弹幕 161、封装 5）；根应用 13 项环境跳过，未配置 `BILI_MUX_LIBRARY` 的 10 项 mux 原生测试跳过，不计作原生通过。日志为 `build/ci-42472383067-check-final.log`；上述收敛后的定向复验另存于 `build/ci-42472383067-python{-linux,}-final.log`。CI／Release 工作流通过 actionlint 1.7.12，本文本地链接与 `git diff --check` 通过，五份锁文件未修改。本轮没有客户端构建、签名、安装或设备操作；旧提交完整对照在本次记录时分片 1 已通过，分片 0 仍在运行，平台构建尚未开始，不声称该次完整 CI 成功。
 
 ## 2026-11-08：Linux 依赖重试后的安装目录
 
-[CI 42477860369 的 Linux 构建](https://github.com/CKopoer/BiliSail/actions/runs/42477860369/job/128725938776) 对应提交 `b328741134a3582cb723bd6679d5e9e1d5c73826`。格式／分析、两份根测试分片、包测试和 mux 原生回归已通过。Linux 首次配置于 12:13:17 UTC（北京时间 20:13:17）因 MDK 0.39.0 下载返回 HTTP 错误而终止；日志未记录具体状态码。既有下载重试随后继续到安装阶段，于 12:14:41 UTC 尝试将主程序复制至 `/usr/local`，因权限不足失败。
+[CI 42477860369 的 Linux 构建](https://github.com/ZakiuC/BiliSail/actions/runs/42477860369/job/128725938776) 对应提交 `b328741134a3582cb723bd6679d5e9e1d5c73826`。格式／分析、两份根测试分片、包测试和 mux 原生回归已通过。Linux 首次配置于 12:13:17 UTC（北京时间 20:13:17）因 MDK 0.39.0 下载返回 HTTP 错误而终止；日志未记录具体状态码。既有下载重试随后继续到安装阶段，于 12:14:41 UTC 尝试将主程序复制至 `/usr/local`，因权限不足失败。
 
 [Linux CMake 配置](../../linux/CMakeLists.txt) 原先在插件配置之后才将默认安装前缀切换到构建目录下的 `bundle`。依据 [CMake 对默认初始化标志的说明](https://cmake.org/cmake/help/latest/variable/CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT.html)，该标志只在安装前缀刚被初始化为默认值时有效；首次插件下载失败时，系统默认前缀已进入缓存，而应用设置 bundle 的代码尚未运行。重试继续使用该缓存，跳过默认初始化分支，最终生成了安装到 `/usr/local` 的规则。
 

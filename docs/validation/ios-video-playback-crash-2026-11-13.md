@@ -2,7 +2,7 @@
 
 后续状态：已在原生受控回归中确认 Apple 输出的销毁确认过早、渲染通知无界积压和纹理被 Flutter 保留时上下文延后释放的问题，进一步修复并固定到 `302d60eedc55ca677e911e529569b1e14d8c2e7e`。实现、负向对照和 SDK 验证见文末；系统日志缺失，因此仍不把受控复现等同于现场退出原因已得到设备确认。
 
-日期：2026-11-13（Asia/Shanghai）。反馈版本为当前 `1.2.9+5`，用户描述通常播放十几秒后退出、其他平台及 PiliPlus 未出现同类现象。[Issue #122](https://github.com/CKopoer/BiliSail/issues/122) 另有 iOS 16.6.1、巨魔安装、任意视频播放时随机退出而首页正常的报告。后续收到应用导出日志，复核见文末；仍没有系统原生异常堆栈或 JetsamEvent。
+日期：2026-11-13（Asia/Shanghai）。反馈版本为当前 `1.2.9+5`，用户描述通常播放十几秒后退出、其他平台及 PiliPlus 未出现同类现象。[Issue #122](https://github.com/ZakiuC/BiliSail/issues/122) 另有 iOS 16.6.1、巨魔安装、任意视频播放时随机退出而首页正常的报告。后续收到应用导出日志，复核见文末；仍没有系统原生异常堆栈或 JetsamEvent。
 
 本轮定位并修复了可通过故障注入复现的 iOS 原生进程退出路径。尚不能把这些受控结果等同于现场十几秒闪退已经复现，也不能断言现场是内存耗尽、解码器错误或哪一种系统异常。
 
@@ -171,7 +171,7 @@ Apple 明确禁止后台使用 OpenGL ES，包括某些此前提交命令在后�
 
 ### 检查入口修正
 
-上一轮新增的 `test_ios_video_output.py` 需要 Pub 生成的 `.dart_tool/package_config.json`，但原 `tool/check.ps1` 在 Pub 前运行 `test_ios_*.py`。本地已有配置，冷检出的 [CI 43270740839](https://github.com/CKopoer/BiliSail/actions/runs/43270740839) 则因此失败并跳过构建。此次将该测试组移到依赖解析之后，保留全部检查，不以跳过测试解决问题。
+上一轮新增的 `test_ios_video_output.py` 需要 Pub 生成的 `.dart_tool/package_config.json`，但原 `tool/check.ps1` 在 Pub 前运行 `test_ios_*.py`。本地已有配置，冷检出的 [CI 43270740839](https://github.com/ZakiuC/BiliSail/actions/runs/43270740839) 则因此失败并跳过构建。此次将该测试组移到依赖解析之后，保留全部检查，不以跳过测试解决问题。
 
 ### 本轮验证
 
@@ -179,7 +179,7 @@ Apple 明确禁止后台使用 OpenGL ES，包括某些此前提交命令在后�
 - 对 `ba953612` 运行同一生命周期回归，7 项均失败；修复后覆盖活跃渲染、Flutter 保留纹理、一万次通知合并、重复关闭、迟到事件、初始化期间关闭以及关闭后立即回收句柄。
 - 10 份变更 Swift 源码语法检查、SDK 辅助脚本 Bash 语法、`git diff --check` 通过。
 - `tool/test-windows-video-dispose.ps1`：9 项原生释放、渲染队列和尺寸检查通过，Windows 实现本轮未改变。
-- Apple 原生 Release 编译在 [CI 43275138772](https://github.com/CKopoer/BiliSail/actions/runs/43275138772) 通过：iOS arm64 / macOS arm64，使用真实 Apple SDK、Flutter 3.47.6 框架和固定 mpv 头文件，以 Swift 5 / `-O` 编译完整插件公共类、实际方法通道和两种纹理实现，均生成 Mach-O arm64 对象。没有用 Flutter 协议替身代替这次编译；这是原生插件编译，不是 IPA/DMG 打包或设备运行。该独立验证分支的工作流改动不会进入主分支。
+- Apple 原生 Release 编译在 [CI 43275138772](https://github.com/ZakiuC/BiliSail/actions/runs/43275138772) 通过：iOS arm64 / macOS arm64，使用真实 Apple SDK、Flutter 3.47.6 框架和固定 mpv 头文件，以 Swift 5 / `-O` 编译完整插件公共类、实际方法通道和两种纹理实现，均生成 Mach-O arm64 对象。没有用 Flutter 协议替身代替这次编译；这是原生插件编译，不是 IPA/DMG 打包或设备运行。该独立验证分支的工作流改动不会进入主分支。
 - 全量 `tool/check.ps1 -EnforceLockfile` 通过：五份锁文件可复现解析、格式/静态分析、打包边界，以及 6,565 项离线测试（根应用 5,270、API 917、播放器 212、弹幕 161、mux 5）。根应用 13 项、播放器 1 项按环境跳过；mux 的 10 项原生用例因未配置 `BILI_MUX_LIBRARY` 跳过。Windows 根检查中没有 swiftc 的可执行 Swift 用例明确跳过，由前述 WSL 21 项专项独立验证。日志为忽略目录 `build/ios-playback-fix/lifecycle-check.log`。
 
 受控图形替身测试不能证明真实 CoreVideo/Metal 内存曲线或 GPU 驱动行为；本轮仍没有 iOS/macOS 设备播放验收，也没有将用户提供的原始日志提交到远端。

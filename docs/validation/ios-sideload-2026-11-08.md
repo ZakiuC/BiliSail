@@ -1,10 +1,10 @@
 # iOS 1.2.8 侧载重签兼容性
 
-日期：2026-11-08（Asia/Shanghai）。对应 [issue #96](https://github.com/CKopoer/BiliSail/issues/96)：iPad Pro 使用 Sideloadly 安装 1.2.8 时，在 `Avutil.framework/Avutil` 上报 `macho sign/edit failed (-18)`；同一用户的 1.2.7 可以侧载。失败发生在电脑重签阶段，尚未进入设备启动或播放器初始化。
+日期：2026-11-08（Asia/Shanghai）。对应 [issue #96](https://github.com/ZakiuC/BiliSail/issues/96)：iPad Pro 使用 Sideloadly 安装 1.2.8 时，在 `Avutil.framework/Avutil` 上报 `macho sign/edit failed (-18)`；同一用户的 1.2.7 可以侧载。失败发生在电脑重签阶段，尚未进入设备启动或播放器初始化。
 
 ## 已发布资产的差异
 
-直接读取 [1.2.7+0](https://github.com/CKopoer/BiliSail/releases/tag/v1.2.7%2B0) 和 [1.2.8+0](https://github.com/CKopoer/BiliSail/releases/tag/v1.2.8%2B0) 的 IPA 中央目录，按 ZIP entry 范围下载、解压 Avutil，并核对其 CRC-32。没有用本地源码构建物代替用户下载的文件。
+直接读取 [1.2.7+0](https://github.com/ZakiuC/BiliSail/releases/tag/v1.2.7%2B0) 和 [1.2.8+0](https://github.com/ZakiuC/BiliSail/releases/tag/v1.2.8%2B0) 的 IPA 中央目录，按 ZIP entry 范围下载、解压 Avutil，并核对其 CRC-32。没有用本地源码构建物代替用户下载的文件。
 
 | Avutil 项目 | 1.2.7+0 | 1.2.8+0 |
 | --- | --- | --- |

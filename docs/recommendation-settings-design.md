@@ -81,7 +81,7 @@ dart compile exe tool/benchmark_recommendation_filter.dart -o build/recommendati
 
 ## Web 推荐刷新采样序号（2026-11-01）
 
-问题由 [PR #53](https://github.com/CKopoer/BiliSail/pull/53) 报告。本次在游客态以现有 API 实现进行少量只读对照：`fresh_idx=1` 连续两次取得相同顺序的 20 条视频；改为 2、3 时分别取得另外 20 条，与首批无重合；回到 1 又得到首批。请求间 `wts` 已变化，因此签名时间戳相同不是复现的必要条件。该观测只对应本次网络及游客样本，不推导为登录账号或服务端长期保证。
+问题由 [PR #53](https://github.com/ZakiuC/BiliSail/pull/53) 报告。本次在游客态以现有 API 实现进行少量只读对照：`fresh_idx=1` 连续两次取得相同顺序的 20 条视频；改为 2、3 时分别取得另外 20 条，与首批无重合；回到 1 又得到首批。请求间 `wts` 已变化，因此签名时间戳相同不是复现的必要条件。该观测只对应本次网络及游客样本，不推导为登录账号或服务端长期保证。
 
 此前 `FeedController.refresh()` 从第 1 页开始，仓储直接将页码作为 `fresh_idx`，导致每次刷新回到已使用的采样序号。本次独立修改 [ApiFeedRepository](../lib/features/feed/data/api_feed_repository.dart)，不从页码大小推断刷新轮次：
 

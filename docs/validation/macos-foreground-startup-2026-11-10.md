@@ -23,7 +23,7 @@
 
 ## CI 42809726088：无窗口激活前置条件失败
 
-[arm64 job](https://github.com/CKopoer/BiliSail/actions/runs/42809726088/job/129808946983) 的 `startup.result.json` 记录 `lastStage=foreground-startup`、`errorKind=platform`、`exitCode=1`，`timedOut` 和 `supervisorTimedOut` 均为 `false`。进入该阶段后约 10.35 秒退出，尚未执行 `window-create`。结合初版原生代码的十秒 deadline，可定位到 `startup_activation_timeout` 路径；诊断白名单本身未保存具体平台错误码。
+[arm64 job](https://github.com/ZakiuC/BiliSail/actions/runs/42809726088/job/129808946983) 的 `startup.result.json` 记录 `lastStage=foreground-startup`、`errorKind=platform`、`exitCode=1`，`timedOut` 和 `supervisorTimedOut` 均为 `false`。进入该阶段后约 10.35 秒退出，尚未执行 `window-create`。结合初版原生代码的十秒 deadline，可定位到 `startup_activation_timeout` 路径；诊断白名单本身未保存具体平台错误码。
 
 初版用 `NSApp.activate(ignoringOtherApps: true)` 等待无窗口进程真正激活，而 CI 直接启动 bundle 内的可执行文件。该请求在本次 runner 没有获得激活。Apple 的[协作激活说明](https://developer.apple.com/documentation/appkit/passing-control-from-one-app-to-another-with-cooperative-activation)明确指出激活是系统决定是否接受的请求，不能假设一定获准。现有证据不足以进一步判定 runner 当时的前台应用或具体拒绝原因，也不表示所有无窗口应用均不能激活。
 

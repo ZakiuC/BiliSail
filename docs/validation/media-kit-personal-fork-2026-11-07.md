@@ -1,6 +1,6 @@
 # 官方基线与个人媒体 fork 统一维护
 
-2026-11-21 修复 [Linux 软件视频输出关闭时闪退（#152）](https://github.com/CKopoer/BiliSail/issues/152)。根应用和 `bili_player` 的八个媒体包统一固定到 [aaa85281](https://github.com/CKopoer/media-kit/commit/aaa85281530b1ad80fa9e7d7808fcfdd7b5d30bd)，直接父提交为原锁定版本 `302d60ee`。每个软件输出持有一个可取消的 GTK 渲染源，关闭时断开 mpv 回调、销毁渲染源，并等待正在复制图像的 raster 回调脱离输出，再释放资源。传给 libmpv 的软件行跨度按接口使用 `size_t`。
+2026-11-21 修复 [Linux 软件视频输出关闭时闪退（#152）](https://github.com/ZakiuC/BiliSail/issues/152)。根应用和 `bili_player` 的八个媒体包统一固定到 [aaa85281](https://github.com/CKopoer/media-kit/commit/aaa85281530b1ad80fa9e7d7808fcfdd7b5d30bd)，直接父提交为原锁定版本 `302d60ee`。每个软件输出持有一个可取消的 GTK 渲染源，关闭时断开 mpv 回调、销毁渲染源，并等待正在复制图像的 raster 回调脱离输出，再释放资源。传给 libmpv 的软件行跨度按接口使用 `size_t`。
 
 Ubuntu 24.04 x64 下使用 Flutter 3.50.0 Linux engine 和固定的 libmpv 完成原生编译与 CTest。回归用例检查真实软件帧首尾像素、首帧前关闭、复制期间关闭和关闭后读取保留的纹理，ASan／UBSan 检查通过。WSL2 的 Xvfb 桌面上，BiliSail Linux Debug 普通入口构建成功；独立验证入口通过实际 Flutter 纹理完成 10 次显示 64×36 本地视频帧后关闭、10 次打开期间关闭。本地 Debug 链接阶段在临时构建目录为已固定的 libmpv 补建了链接名，运行时与 AppImage 一致，优先加载 bundle 内的 libmpv。普通主窗口的 Alt+F4 退出检查超时；上述 20 次检查的对象为视频播放器。报告者的原设备和发布 AppImage 尚未复测。
 

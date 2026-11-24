@@ -49,7 +49,7 @@ Android 构建曾停在自动准备缺失的 SDK Platform 31，随后按用户�
 
 ## CI #266：Android 插件编译 SDK
 
-[CI #266 的 Android 任务](https://github.com/CKopoer/BiliSail/actions/runs/41300058977/job/124830948861) 对应 `900a0f65a1807fa26f71a85e0fef2dc1ebc642ab`，失败于 `:media_kit_video:checkReleaseAarMetadata`。固定视频插件的 `android/build.gradle` 仍声明 `compileSdkVersion 31`；当前 Flutter embedding 引入的插件依赖包含要求 SDK 36 的 `wakelock_plus`、`screen_brightness_android` 等，AAR 元数据检查共报告 25 项不兼容。根应用自身使用 SDK 36，单独修改应用配置不能修复库模块。
+[CI #266 的 Android 任务](https://github.com/ZakiuC/BiliSail/actions/runs/41300058977/job/124830948861) 对应 `900a0f65a1807fa26f71a85e0fef2dc1ebc642ab`，失败于 `:media_kit_video:checkReleaseAarMetadata`。固定视频插件的 `android/build.gradle` 仍声明 `compileSdkVersion 31`；当前 Flutter embedding 引入的插件依赖包含要求 SDK 36 的 `wakelock_plus`、`screen_brightness_android` 等，AAR 元数据检查共报告 25 项不兼容。根应用自身使用 SDK 36，单独修改应用配置不能修复库模块。
 
 本地完整构建同时发现 `media_kit_libs_android_video` 也固定 SDK 31，其 Release AAR 检查报告另外 20 项依赖不兼容。新增[应用侧 Gradle 适配](../../android/patches/media_kit/apply.gradle)，在两个插件的 `com.android.library` 应用时注册 `androidComponents.finalizeDsl`，将它们的 `compileSdk` 提高到 Flutter SDK 的默认编译版本（当前 36），并保留上游可能更高的值。[根构建入口](../../android/build.gradle.kts)在子项目求值前加载适配；回调在上游 DSL 求值后、创建 variant／任务前执行，时机依据 [AGP API](https://developer.android.com/reference/tools/gradle-api/9.1/com/android/build/api/variant/AndroidComponentsExtension)。仅适配这两个媒体插件，不修改 Pub 缓存、固定提交、锁文件、`minSdk`、`targetSdk` 或签名配置。
 

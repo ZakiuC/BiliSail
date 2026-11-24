@@ -18,7 +18,7 @@ const readme = [
 
 function makeRelease(version = '1.2.3+1', selected = suffixes) {
   const tag = `v${version}`;
-  const base = 'https://github.com/CKopoer/BiliSail/releases';
+  const base = 'https://github.com/ZakiuC/BiliSail/releases';
   return {
     tag_name: tag, html_url: `${base}/tag/${encodeURIComponent(tag)}`, draft: false, prerelease: false,
     assets: selected.map((suffix) => {
@@ -90,7 +90,7 @@ function makeClient({ current = readme, conflict = false, failure = null } = {})
   let writes = [];
   let reads = 0;
   const client = {
-    context: { repo: { owner: 'CKopoer', repo: 'BiliSail' }, payload: { repository: { default_branch: 'master' } } },
+    context: { repo: { owner: 'ZakiuC', repo: 'BiliSail' }, payload: { repository: { default_branch: 'master' } } },
     core: { info() {} },
     github: { rest: { repos: {
       async getLatestRelease() { return { data: makeRelease() }; },

@@ -4,7 +4,7 @@
 
 ## 行为与边界
 
-关于页显示真实应用版本、可点击的 `https://github.com/CKopoer/BiliSail` 和“检查更新”。应用启动后不阻塞首屏，每个本地日历日首次启动检查一次；先持久化尝试日期，自动检查失败或没有新版本时不弹窗，当天重启不再次检查。手动检查不受日期限制，有加载状态和明确结果，与正在进行的自动检查共享同一次请求。
+关于页显示真实应用版本、可点击的 `https://github.com/ZakiuC/BiliSail` 和“检查更新”。应用启动后不阻塞首屏，每个本地日历日首次启动检查一次；先持久化尝试日期，自动检查失败或没有新版本时不弹窗，当天重启不再次检查。手动检查不受日期限制，有加载状态和明确结果，与正在进行的自动检查共享同一次请求。
 
 2026-10-24 调整自动提醒规则：按 `major.minor.patch` 持久化最后自动提醒的版本，同一版本跨日、重启或仅增加 `+N` 构建号均不再自动弹窗；例如已提醒 `1.1.1+3` 后，`1.1.1+4` 保持安静，发现 `1.1.2` 时再次提醒。记录只向更新的版本推进，远端候选回退不会重新提醒旧版本。每日查询仍照常进行；手动点击“检查更新”绕过自动提醒记录，每次仍可提示包含最新构建号的新版本，合并进自动请求的手动检查也遵守此规则。
 
@@ -18,7 +18,7 @@
 
 ## 协议、版本与存储
 
-- 独立无凭据 `HttpClient`，单次 GET `https://api.github.com/repos/CKopoer/BiliSail/releases?per_page=100`；`Accept: application/vnd.github+json`、`X-GitHub-Api-Version: 2026-03-10`。不附 Bilibili Cookie/token，不跟随重定向、不自动重试，保留系统 TLS 验证。
+- 独立无凭据 `HttpClient`，单次 GET `https://api.github.com/repos/ZakiuC/BiliSail/releases?per_page=100`；`Accept: application/vnd.github+json`、`X-GitHub-Api-Version: 2026-03-10`。不附 Bilibili Cookie/token，不跟随重定向、不自动重试，保留系统 TLS 验证。
 - 检查列表第一页最多 100 个 Release，要求 `draft`、`prerelease` 为 JSON 布尔值；始终要求 `draft: false`，默认还要求 `prerelease: false`，仅在开启“检查预发布更新”时接受预发布版。不根据标签名称推断 GitHub 的预发布标记。空列表或全部被渠道筛选排除表示暂无符合渠道的发布；存在符合渠道的记录但均非有效版本时不伪装成“已是最新”。仍保留最多 100 项的查询上限，不继续翻页查找更早的版本。
 - 2026-10-25 核对并于 2026-10-28 复核 [GitHub List releases 官方协议（API 2026-03-10）](https://docs.github.com/en/rest/releases/releases?apiVersion=2026-03-10#list-releases)：公开资源可匿名读取，响应为 Release 数组，分页参数只有 `per_page`（最多 100）和 `page`，不提供服务端排除预览版的查询参数，因此在客户端检查 `draft`／`prerelease`。另有 [Get the latest release](https://docs.github.com/en/rest/releases/releases?apiVersion=2026-03-10#get-the-latest-release) 返回单个非草稿、非预览版对象；官方说明其 latest 选择关联 `created_at`，不等同于本项目按语义版本和数字构建号取最大值，因此继续使用列表端点按设置筛选渠道。
 - 版本先按 `major.minor.patch` 与预发布标识比较，再比较数字 Flutter `+N` 构建号，支持 `v0.1.0+2`。同一语义版本的不同数字构建仍被识别为更新，但自动弹窗按三段版本号去重，手动检查不受此限制；非数字构建元数据不改变优先级，不按字符串字典序比较。

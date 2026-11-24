@@ -3,7 +3,7 @@ const { readFileSync } = require('node:fs');
 const { test } = require('node:test');
 const { shouldRunCi } = require('./ci-trigger.cjs');
 
-const context = { repo: { owner: 'CKopoer', repo: 'BiliSail' }, eventName: 'push',
+const context = { repo: { owner: 'ZakiuC', repo: 'BiliSail' }, eventName: 'push',
   ref: 'refs/heads/codex/example', payload: { repository: { default_branch: 'master' } } };
 
 function fixture(pulls = []) {
@@ -22,7 +22,7 @@ function fixture(pulls = []) {
 test('branch pushes run until an open PR covers the same repository head', async () => {
   const options = fixture();
   assert.equal(await shouldRunCi({ ...options, context }), true);
-  assert.equal(options.requests[0].head, 'CKopoer:codex/example');
+  assert.equal(options.requests[0].head, 'ZakiuC:codex/example');
   assert.equal(options.requests[0].state, 'open');
   const covered = fixture([{ head: { repo: { full_name: 'ckopoer/bilisail' } } }]);
   assert.equal(await shouldRunCi({ ...covered, context }), false);
@@ -31,7 +31,7 @@ test('branch pushes run until an open PR covers the same repository head', async
 test('PR, dispatch and default-branch pushes never depend on the PR lookup', async () => {
   for (const change of [{ eventName: 'pull_request' }, { eventName: 'workflow_dispatch' },
     { ref: 'refs/heads/master' }]) {
-    const options = fixture([{ head: { repo: { full_name: 'CKopoer/BiliSail' } } }]);
+    const options = fixture([{ head: { repo: { full_name: 'ZakiuC/BiliSail' } } }]);
     assert.equal(await shouldRunCi({ ...options, context: { ...context, ...change } }), true);
     assert.equal(options.requests.length, 0);
   }

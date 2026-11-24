@@ -85,7 +85,7 @@ Windows x64／Flutter 3.47.6 本轮验证：
 
 ## 2026-10-26：Linux 许可证归属误匹配与依赖缓存
 
-[CI 40214248464 的 Linux job](https://github.com/CKopoer/BiliSail/actions/runs/40214248464/job/121233229596) 在提交 `db982b7aaa545506e5484fae03f0ddef07778b01` 上完成 Flutter Release 编译，随后公共 AppDir 的许可证收集报错：`Distro license text missing: google-chrome-stable`。失败前约 5 分 21 秒，不是两个安装包构建成功的耗时，也不是 Flutter 编译失败。
+[CI 40214248464 的 Linux job](https://github.com/ZakiuC/BiliSail/actions/runs/40214248464/job/121233229596) 在提交 `db982b7aaa545506e5484fae03f0ddef07778b01` 上完成 Flutter Release 编译，随后公共 AppDir 的许可证收集报错：`Distro license text missing: google-chrome-stable`。失败前约 5 分 21 秒，不是两个安装包构建成功的耗时，也不是 Flutter 编译失败。
 
 原脚本按 `*/<库文件名>` 查询 dpkg 归属，同名库会把 runner 预装应用的私有副本也算入依赖，例如 `/opt/google/chrome/` 中的库。修复将归属查询限制为 Ubuntu x64 的 `/usr/lib/x86_64-linux-gnu/`、`/lib/x86_64-linux-gnu/`，再匹配包中实际库名；保留嵌套 GTK 模块和多归属解析，忽略 diversion 说明行。真实系统依赖仍必须附版权文本、binary/source 包名及版本，缺失时继续失败；没有通过忽略 Chrome 错误或关闭许可证校验放行。
 
@@ -106,8 +106,8 @@ Windows x64／Flutter 3.47.6 本轮验证：
 
 对照同一源码提交的两条运行：
 
-- [push CI 的 Linux job](https://github.com/CKopoer/BiliSail/actions/runs/40214248464/job/121233229596)：apt 共新增 335 个包、升级 18 个包，175 MB 的 `.deb` 在 14 秒内下载完成（日志约 12.3 MB/s）；随后完成解包／配置。Flatpak Runtime、GL／Locale 扩展及 SDK 安装约 45 秒；依赖整个步骤从 UTC 17:05:12 到 17:06:54，约 1 分 42 秒。
-- [Release 的 Linux job](https://github.com/CKopoer/BiliSail/actions/runs/40214401648/job/121233826103)：该依赖步骤从北京时间 01:07:42 到 01:37:43，实际耗时 30 分 1 秒。任务后续取消，日志归档后确认 apt 明确报告 `Fetched 173 MB in 28min 32s (101 kB/s)`；下载源为 `http://azure.archive.ubuntu.com/ubuntu`，`libsystemd-shared` 出现重试。其后 Flatpak 安装仍只约 45 秒，耗时差异几乎全在 apt 下载链路。28 分 32 秒中持续有包下载进度：例如 11.2 MB 的 cmake 相邻下载记录间隔约 141 秒，13.6 MB 的 libflite1 间隔约 186 秒。日志能确认低吞吐，不能进一步区分镜像节点与具体 runner 网络路由。
+- [push CI 的 Linux job](https://github.com/ZakiuC/BiliSail/actions/runs/40214248464/job/121233229596)：apt 共新增 335 个包、升级 18 个包，175 MB 的 `.deb` 在 14 秒内下载完成（日志约 12.3 MB/s）；随后完成解包／配置。Flatpak Runtime、GL／Locale 扩展及 SDK 安装约 45 秒；依赖整个步骤从 UTC 17:05:12 到 17:06:54，约 1 分 42 秒。
+- [Release 的 Linux job](https://github.com/ZakiuC/BiliSail/actions/runs/40214401648/job/121233826103)：该依赖步骤从北京时间 01:07:42 到 01:37:43，实际耗时 30 分 1 秒。任务后续取消，日志归档后确认 apt 明确报告 `Fetched 173 MB in 28min 32s (101 kB/s)`；下载源为 `http://azure.archive.ubuntu.com/ubuntu`，`libsystemd-shared` 出现重试。其后 Flatpak 安装仍只约 45 秒，耗时差异几乎全在 apt 下载链路。28 分 32 秒中持续有包下载进度：例如 11.2 MB 的 cmake 相邻下载记录间隔约 141 秒，13.6 MB 的 libflite1 间隔约 186 秒。日志能确认低吞吐，不能进一步区分镜像节点与具体 runner 网络路由。
 
 主要问题落在 apt 到 Azure 镜像的下载链路，额外的重复下载由此前缺失 Linux 依赖缓存放大。GitHub runner-images 维护者在 [issue 12949](https://github.com/actions/runner-images/issues/12949) 中确认过该镜像偶发低速；[官方 runner 配置](https://github.com/actions/runner-images/blob/main/images/ubuntu/scripts/build/configure-apt-sources.sh) 将 Azure 设为 priority 1、Ubuntu archive 为 2、security 为 3。[APT 镜像选择](https://manpages.ubuntu.com/manpages/noble/man1/apt-transport-mirror.1.html) 优先数值较低的条目，[HTTP 超时](https://manpages.ubuntu.com/manpages/noble/man1/apt-transport-http.1.html) 是连接／数据超时，不能作为整个下载的总时限。
 
@@ -117,7 +117,7 @@ Windows x64／Flutter 3.47.6 本轮验证：
 
 ## 同日补查：Flatpak Runtime 校验静默失败
 
-[CI #147 的 Linux job](https://github.com/CKopoer/BiliSail/actions/runs/40220618910/job/121252679168) 对应 `687a046bc3e01e09815fcafe1512c89a212328f7`。原始日志确认 Flutter Release 编译、AppImage 生成及 Flatpak 仓库导出完成，随后在安装及 Runtime 校验阶段仅报告 `bash failed: 1`。依赖缓存已命中，APT 安装耗时 35 秒；本次没有再出现旧的 Chrome 许可证错误。
+[CI #147 的 Linux job](https://github.com/ZakiuC/BiliSail/actions/runs/40220618910/job/121252679168) 对应 `687a046bc3e01e09815fcafe1512c89a212328f7`。原始日志确认 Flutter Release 编译、AppImage 生成及 Flatpak 仓库导出完成，随后在安装及 Runtime 校验阶段仅报告 `bash failed: 1`。依赖缓存已命中，APT 安装耗时 35 秒；本次没有再出现旧的 Chrome 许可证错误。
 
 原 Runtime 检查在 `sh -e` 中将 `ldd` 的输出捕获到变量；命令返回非零时，shell 会在打印错误之前退出。主程序的依赖输出又被写入沙盒临时文件，未传回日志。因此现有日志不能确定具体失败库或 ABI，不能据此宣称依赖问题已修复。
 
@@ -127,7 +127,7 @@ Windows x64／Flutter 3.47.6 本轮验证：
 
 ### 诊断 CI 确认的两个根因
 
-[诊断提交 5769b3f 的 Linux job](https://github.com/CKopoer/BiliSail/actions/runs/40257170639/job/121362968972) 明确报告：
+[诊断提交 5769b3f 的 Linux job](https://github.com/ZakiuC/BiliSail/actions/runs/40257170639/job/121362968972) 明确报告：
 
 - `org.gnome.desktop.sound.gschema.xml` 被 `*.so*` 匹配，`ldd` 返回 `not a dynamic executable`。Runtime 检查原先缺少宿主 AppDir 校验已有的 ELF 文件头筛选，数据文件导致误报。现仅对 ELF 运行依赖检查，主程序缺失或不是 ELF 仍报错。
 - `/app/usr/bin/lib/libdartjni.so` 的 `libjvm.so => not found` 是真实缺依赖。锁定的 `path_provider_android 2.3.1` 传递引入 `jni 1.1.0`；后者作为桌面 FFI 插件，仅在发现 JDK 时生成 JNI 库并链接该 JDK。runner 安装了 JDK，宿主检查因而通过，但 Flatpak Runtime 不提供该 JVM。Linux 应用实际使用 `path_provider_linux`，源码没有 JVM 集成；在 Linux CMake 引入生成插件规则前设置 `CMAKE_DISABLE_FIND_PACKAGE_JNI`，使用上游支持的可选探测路径，不构建或分发这份 Android 传递依赖的桌面 JNI 库。Android 和其他平台配置不变，未修改 Pub 缓存、生成插件清单或锁文件，也未添加 JVM 运行时。

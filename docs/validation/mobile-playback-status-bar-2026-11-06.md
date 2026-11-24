@@ -41,6 +41,6 @@
 
 ## 2026-11-18 iOS 横屏全屏顶部弹幕
 
-- 截图中播放器顶部的黑色区域盖住了视频和第一行弹幕。全屏路由复用了普通播放页的状态栏背景，iOS 横屏仍报告顶部安全区时，背景会按该高度覆盖已经铺满视口的内容。见 [#142](https://github.com/CKopoer/BiliSail/issues/142)。
+- 截图中播放器顶部的黑色区域盖住了视频和第一行弹幕。全屏路由复用了普通播放页的状态栏背景，iOS 横屏仍报告顶部安全区时，背景会按该高度覆盖已经铺满视口的内容。见 [#142](https://github.com/ZakiuC/BiliSail/issues/142)。
 - iOS 横屏全屏播放视频时只提供系统状态栏样式，视频和弹幕正常绘制至视口顶边。播放器控件仍读取原始安全区。见[状态栏适配](../../lib/core/presentation/mobile_playback_status_bar.dart)。
 - 使用 iPhone 14 Pro Max 的横屏逻辑尺寸，在顶部安全区出现前后对比首行固定弹幕的实际绘制像素，并检查系统状态栏样式。iOS 真机显示仍待验证。见[播放面板回归](../../test/features/playback/playback_panel_test.dart)。

@@ -1,6 +1,6 @@
 # Windows ARM64 黑屏：修正 EGL 生产者表面生命周期
 
-日期：2026-11-12。基线 master `ef2d5cdd`，关联 [issue #100](https://github.com/CKopoer/BiliSail/issues/100)。
+日期：2026-11-12。基线 master `ef2d5cdd`，关联 [issue #100](https://github.com/ZakiuC/BiliSail/issues/100)。
 
 ## 证据与原因
 
@@ -37,7 +37,7 @@ Flutter 3.47.6／Dart 3.13.5 下的结果：
 
 ## CI 锁文件序列化修复
 
-[CI 43071478079](https://github.com/CKopoer/BiliSail/actions/runs/43071478079) 对应应用提交 `410b700f`。静态检查、根测试四个分片、包测试及 mux 原生回归均成功。七个平台完成编译和打包，其中 Windows x64／ARM64 安装包验证也成功；所有构建任务最后都在 `tool/build-release.ps1:404` 报告 `Build changed pubspec.lock; do not publish this package.`。
+[CI 43071478079](https://github.com/ZakiuC/BiliSail/actions/runs/43071478079) 对应应用提交 `410b700f`。静态检查、根测试四个分片、包测试及 mux 原生回归均成功。七个平台完成编译和打包，其中 Windows x64／ARM64 安装包验证也成功；所有构建任务最后都在 `tool/build-release.ps1:404` 报告 `Build changed pubspec.lock; do not publish this package.`。
 
 原因是此前替换 Git ref 时保留了旧锁文件的引号。新提交号以 `e` 开头，固定 Pub 的标准序列化会将其写成无引号字符串。`pub get --enforce-lockfile` 接受带引号的等价 YAML，且不改写文件；Flutter 构建为更新插件注册再次运行普通 Pub 时，会移除引号，触发发布脚本的文件 SHA-256 校验。这是锁文件表示形式的变化，依赖版本、Git 提交和校验摘要没有变化。
 

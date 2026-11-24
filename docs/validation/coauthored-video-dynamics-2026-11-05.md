@@ -1,6 +1,6 @@
 # 联合投稿视频动态去重（#67）
 
-日期：2026-11-05。对应 [issue #67](https://github.com/CKopoer/BiliSail/issues/67)。
+日期：2026-11-05。对应 [issue #67](https://github.com/ZakiuC/BiliSail/issues/67)。
 
 ## 协议与 PiliPlus 对照
 

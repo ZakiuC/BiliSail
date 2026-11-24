@@ -28,17 +28,17 @@ Windows DLL 实测 1,410,035 字节，约 **1.34 MiB**；这是组件文件大�
 
 ## CI 原生回归探测工具修复（2026-10-09）
 
-[Release preview #17](https://github.com/CKopoer/BiliSail/actions/runs/37811377456/job/113428864815) 的 Linux 原生库构建成功，原生回归 8 项通过、AV1 项失败。Ubuntu 安装的 ffprobe 为 `6.1.1`，读取提交的 AV1 分片输入时遗漏全部 12 个数据包的 `duration_time`，测试强制转换字符串时抛出空值类型错误。样片容器中每帧仍保存 1024 / 12288 秒的时长，组件封装后的视频数据包哈希一致；本机 ffprobe `9.0.2` 下原生回归 9 项全部通过。
+[Release preview #17](https://github.com/ZakiuC/BiliSail/actions/runs/37811377456/job/113428864815) 的 Linux 原生库构建成功，原生回归 8 项通过、AV1 项失败。Ubuntu 安装的 ffprobe 为 `6.1.1`，读取提交的 AV1 分片输入时遗漏全部 12 个数据包的 `duration_time`，测试强制转换字符串时抛出空值类型错误。样片容器中每帧仍保存 1024 / 12288 秒的时长，组件封装后的视频数据包哈希一致；本机 ffprobe `9.0.2` 下原生回归 9 项全部通过。
 
 CI 改为从组件已经校验的固定源码单独构建测试用 ffprobe，并核对其版本与组件来源记录一致。探测工具保存在测试构建目录，不进入应用资产；测试继续严格比较数量、哈希、PTS/DTS、时长和共享时间轴，缺失／非法字段给出明确诊断，不填充为零或跳过比较。
 
 提交前本机验证：`tool/check.ps1 -EnforceLockfile` 通过格式、分析及 1900 项测试，五份锁文件无差异；Windows 显式启用原生资产的 9 项回归全部通过。WSL Linux 实际构建组件和测试 ffprobe `9.0.2`，H.264／HEVC／AV1 + AAC 三组的包数、哈希、PTS/DTS、时长与相对起始偏移全部通过。两个工作流通过 actionlint，修改文档的 7 条本地链接通过。应用安装包和远端 Release 在此提交前尚未重新构建；这项修复不改变原生封装实现。
 
-后续 [Release preview #18](https://github.com/CKopoer/BiliSail/actions/runs/37814204461) 已通过全项目检查及原生 9 项回归，继续打包时暴露 macOS 组件构建失败。平台构建包装脚本增加失败时输出配置／编译／链接日志末尾，供远端定位，不再只提示检查已经不可访问的 runner 本地文件。
+后续 [Release preview #18](https://github.com/ZakiuC/BiliSail/actions/runs/37814204461) 已通过全项目检查及原生 9 项回归，继续打包时暴露 macOS 组件构建失败。平台构建包装脚本增加失败时输出配置／编译／链接日志末尾，供远端定位，不再只提示检查已经不可访问的 runner 本地文件。
 
-[补充日志后的运行](https://github.com/CKopoer/BiliSail/actions/runs/37815695054/job/113446824340) 确认 Xcode clang 的链接测试报 `library 'System' not found`：直接编译器路径未携带 macOS SDK。构建脚本从 `xcrun --sdk macosx --show-sdk-path` 解析 SDK，传给 FFmpeg configure 的 sysroot 和包装库编译／链接命令；同时让 macOS 的 C++ 参数数组非空，兼容系统 Bash 3.2 的 nounset 行为。后续平台构建结果由修复后的发布运行验证。
+[补充日志后的运行](https://github.com/ZakiuC/BiliSail/actions/runs/37815695054/job/113446824340) 确认 Xcode clang 的链接测试报 `library 'System' not found`：直接编译器路径未携带 macOS SDK。构建脚本从 `xcrun --sdk macosx --show-sdk-path` 解析 SDK，传给 FFmpeg configure 的 sysroot 和包装库编译／链接命令；同时让 macOS 的 C++ 参数数组非空，兼容系统 Bash 3.2 的 nounset 行为。后续平台构建结果由修复后的发布运行验证。
 
-[Release preview #20](https://github.com/CKopoer/BiliSail/actions/runs/37817020565) 的全项目检查、9 项原生回归和 Android APK 打包通过；macOS 组件和应用编译也通过。Windows 在 make 阶段报源码 Makefile 不存在：`setup-msys2` 的 `location` 是安装父目录，实际工具在 `C:\msys64\msys64`，脚本却调用 runner 已有的 `C:\msys64`，随后混用不能识别 `/d/a/...` 的 make。CI 现将安装步骤的 `msys2-location` 输出传给构建包装脚本，原生脚本显式调用同一 MSYS 根的 `/usr/bin/make`。本机继续支持 `-MsysRoot`，未指定时优先读取 `BILI_MUX_MSYS_ROOT`，再使用默认目录。
+[Release preview #20](https://github.com/ZakiuC/BiliSail/actions/runs/37817020565) 的全项目检查、9 项原生回归和 Android APK 打包通过；macOS 组件和应用编译也通过。Windows 在 make 阶段报源码 Makefile 不存在：`setup-msys2` 的 `location` 是安装父目录，实际工具在 `C:\msys64\msys64`，脚本却调用 runner 已有的 `C:\msys64`，随后混用不能识别 `/d/a/...` 的 make。CI 现将安装步骤的 `msys2-location` 输出传给构建包装脚本，原生脚本显式调用同一 MSYS 根的 `/usr/bin/make`。本机继续支持 `-MsysRoot`，未指定时优先读取 `BILI_MUX_MSYS_ROOT`，再使用默认目录。
 
 macOS 在已签名产物检查中发现额外的 `com.apple.security.get-task-allow`。Runner 的 Release 配置设置 `CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO`，阻止 Xcode 注入调试权限；依据 [Apple 发布签名说明](https://developer.apple.com/documentation/security/resolving-common-notarization-issues)。仍要求实际签名只含 Sandbox 和网络客户端权限，不放宽校验，补充拒绝调试权限为 true／false 的离线用例。此轮修复的完整平台发布结果由后续 Actions 验证。
 

@@ -28,9 +28,9 @@
 
 ### 2.1 issue #44 与当前工作区不是同一条渲染路径
 
-[BiliSail #44](https://github.com/CKopoer/BiliSail/issues/44) 报告 Windows 11、8845HS／Radeon 780M、版本 **1.2.5+3**，3D 约 50%、Copy 约 30%、Video Codec 低于 5%。这是用户报告，未提供实际 `hwdec-current`、视频格式、刷新率和原生库摘要，尚不能判定是解码回读、GPU 输出复制还是其他原因。
+[BiliSail #44](https://github.com/ZakiuC/BiliSail/issues/44) 报告 Windows 11、8845HS／Radeon 780M、版本 **1.2.5+3**，3D 约 50%、Copy 约 30%、Video Codec 低于 5%。这是用户报告，未提供实际 `hwdec-current`、视频格式、刷新率和原生库摘要，尚不能判定是解码回读、GPU 输出复制还是其他原因。
 
-追溯 [v1.2.5+3 发布](https://github.com/CKopoer/BiliSail/releases/tag/v1.2.5%2B3) 的源码提交 `a88f72ab0dd477e3715e49743850725a453e587e`：[锁文件](https://github.com/CKopoer/BiliSail/blob/a88f72ab0dd477e3715e49743850725a453e587e/pubspec.lock)指向 **Predidit `83b7ca…`**，Windows 是 **DXGI**，runner 未关闭 Impeller。调研时最新公开发布 v1.2.6+1 的目标 `7c6755e26715bd221f7e541a6b83593d3e5b5919` 也仍采用该依赖。这里只确认发布源码／锁文件，未取得反馈者机器上的 DLL 或日志。
+追溯 [v1.2.5+3 发布](https://github.com/ZakiuC/BiliSail/releases/tag/v1.2.5%2B3) 的源码提交 `a88f72ab0dd477e3715e49743850725a453e587e`：[锁文件](https://github.com/ZakiuC/BiliSail/blob/a88f72ab0dd477e3715e49743850725a453e587e/pubspec.lock)指向 **Predidit `83b7ca…`**，Windows 是 **DXGI**，runner 未关闭 Impeller。调研时最新公开发布 v1.2.6+1 的目标 `7c6755e26715bd221f7e541a6b83593d3e5b5919` 也仍采用该依赖。这里只确认发布源码／锁文件，未取得反馈者机器上的 DLL 或日志。
 
 | 对象 | 精确来源 | Windows 输出／合成 |
 | --- | --- | --- |

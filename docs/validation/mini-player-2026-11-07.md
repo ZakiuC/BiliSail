@@ -1,6 +1,6 @@
 # 迷你小窗与窗口置顶
 
-日期：2026-11-07。对应 [issue #80](https://github.com/CKopoer/BiliSail/issues/80)。
+日期：2026-11-07。对应 [issue #80](https://github.com/ZakiuC/BiliSail/issues/80)。
 
 ## 样式与入口
 
@@ -15,7 +15,7 @@
 
 共享 `PlaybackPanel` 保留页面的 `PlaybackSession`、engine 和播放意图。进入前卸载普通 surface，等待一帧后插入小窗 surface；退出先移除小窗并等待一帧，再恢复普通 surface。小窗不重新解析 URL、不创建播放器、不新增播放会话。
 
-桌面小窗和系统画中画覆盖播放页时，保留底层页面的布局和数据订阅。稍后再看列表可以在小窗内等待下一条视频详情，加载后从零点自动播放，列表循环到末尾时回到首项。组件回归覆盖异步详情、列表回绕、单一视频 surface 和窗口还原。[issue #148](https://github.com/CKopoer/BiliSail/issues/148)
+桌面小窗和系统画中画覆盖播放页时，保留底层页面的布局和数据订阅。稍后再看列表可以在小窗内等待下一条视频详情，加载后从零点自动播放，列表循环到末尾时回到首项。组件回归覆盖异步详情、列表回绕、单一视频 surface 和窗口还原。[issue #148](https://github.com/ZakiuC/BiliSail/issues/148)
 
 进入桌面小窗自动置顶，返回时恢复之前的大小、位置、最大化及置顶状态。原生呈现请求串行执行；退出先保存小窗并还原原生窗口，再恢复普通最小尺寸，避免约束扩大窗口后覆盖小窗记录。隐藏／关闭页面与延迟进入请求相交时仍排队还原。
 
@@ -56,7 +56,7 @@ Android 脚本先保留普通入口开发 Release APK，再以同一测试包身
 
 ## 关闭迷你窗的黑屏与 macOS 释放竞态（2026-11-09）
 
-[issue #102](https://github.com/CKopoer/BiliSail/issues/102) 报告 Windows 1.2.8+5 中，关闭迷你窗时会短暂出现接近全屏的黑色窗口；用户另报告 macOS 关闭小窗闪退。
+[issue #102](https://github.com/ZakiuC/BiliSail/issues/102) 报告 Windows 1.2.8+5 中，关闭迷你窗时会短暂出现接近全屏的黑色窗口；用户另报告 macOS 关闭小窗闪退。
 
 - Windows 原生 `saveGeometry` 原先先删除 `MiniPlayerWindow`，其析构执行 `Restore()`，恢复普通大小、标题栏及最大化，然后才保存并隐藏。Flutter 播放子树此时正在卸载，因此会暴露放大后的黑色窗口。现在先在小窗标记仍生效时保存普通窗口记录并隐藏，再以 `Retire()` 保存小窗记录、移除 subclass 和 store 指针，关闭时不恢复大小或样式。
 - macOS 原先在 `retireGeometry` 以及 `MiniPlaybackPresentation.deinit` 中调用 `restore()`；Flutter 页面的 `_dismissMiniPlayer()` 又独立发出异步还原，没有被纳入窗口退休等待。这使标题栏重建、resize／zoom 与 Flutter view／媒体释放存在交叉。现在关闭只停止跟踪，不修改样式、尺寸和层级；`willClose` 和析构也执行相同的幂等清理。新的 `saveGeometry` 在保留小窗排除标记时采样普通记录，并隐藏小窗、保存小窗记录、撤销监听。当前没有 Mac 崩溃栈，不能把这处已确认的源码竞态等同于设备崩溃模块已确诊。

@@ -54,14 +54,14 @@ jobs:
           VERSION: ${{ steps.check.outputs.version }}
         run: |
           set -euo pipefail
-          # 日常推送只出 Android 与 Windows；macOS / iOS / Linux 需要在
-          # Release preview 手动触发时单独打开，避免每次推送都排满五平台。
+          # 日常推送默认构建 Android / Windows / macOS；iOS / Linux 需要在
+          # Release preview 手动触发时单独打开。
           gh workflow run release.yml --repo "$REPO" --ref "$REF_NAME" \
             -f version="$VERSION" \
             -f reuse_ci_build=true \
             -f enable_android=true \
             -f enable_windows=true \
-            -f enable_macos=false \
+            -f enable_macos=true \
             -f enable_ios=false \
             -f enable_linux=false
           echo "::notice title=Release dispatched::BiliSail $VERSION preview for $REF_NAME."

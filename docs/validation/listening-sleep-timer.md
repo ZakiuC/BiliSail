@@ -1,6 +1,6 @@
 # 视频与听视频定时关闭
 
-日期：2026-11-08；初版听视频需求：[issue #56](https://github.com/CKopoer/BiliSail/issues/56)。
+日期：2026-11-08；初版听视频需求：[issue #56](https://github.com/ZakiuC/BiliSail/issues/56)。
 
 ## 交互与生命周期
 

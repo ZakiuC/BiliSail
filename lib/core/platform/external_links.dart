@@ -39,9 +39,9 @@ bool isAllowedExternalLink(Uri uri) {
   return uri.host == 'github.com' &&
       !uri.hasQuery &&
       !uri.hasFragment &&
-      (uri.path == '/CKopoer/BiliSail' ||
-          uri.path == '/CKopoer/BiliSail/releases' ||
+      (uri.path == '/ZakiuC/BiliSail' ||
+          uri.path == '/ZakiuC/BiliSail/releases' ||
           (uri.pathSegments.length == 5 &&
               uri.pathSegments.take(4).join('/') ==
-                  'CKopoer/BiliSail/releases/tag'));
+                  'ZakiuC/BiliSail/releases/tag'));
 }

@@ -4,7 +4,7 @@ const { test } = require('node:test');
 const { canWriteCaches, planCleanup, cleanupCaches, prepareCacheSave } = require('./ci-cache-policy.cjs');
 
 const flutterVersion = readFileSync('.flutter-version', 'utf8').trim();
-const context = { repo: { owner: 'CKopoer', repo: 'BiliSail' }, eventName: 'push',
+const context = { repo: { owner: 'ZakiuC', repo: 'BiliSail' }, eventName: 'push',
   ref: 'refs/heads/master', payload: { repository: { default_branch: 'master' } } };
 const options = { ref: context.ref, flutterVersion };
 const pubPrefix = `bilisail-pub-v2-linux-X64-${flutterVersion}-`;

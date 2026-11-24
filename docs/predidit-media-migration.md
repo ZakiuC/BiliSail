@@ -62,7 +62,7 @@ macOS 部署下限提高至 13.0 的依据已核对固定 Flutter SDK `packages/
 
 ## CI 构建兼容修复（2026-10-29）
 
-[CI #216](https://github.com/CKopoer/BiliSail/actions/runs/40738122479) 的检查和 Android 构建通过，三个 Apple 目标在 Swift 编译时缺少 mpv 声明，Linux 在打包时缺少 `libva-wayland.so.2`，Windows 仅输出 Native Assets 汇总错误。
+[CI #216](https://github.com/ZakiuC/BiliSail/actions/runs/40738122479) 的检查和 Android 构建通过，三个 Apple 目标在 Swift 编译时缺少 mpv 声明，Linux 在打包时缺少 `libva-wayland.so.2`，Windows 仅输出 Native Assets 汇总错误。
 
 - 两份 Podfile 在 Flutter 创建插件链接后调用 [构建副本准备脚本](../tool/prepare-media-kit-apple.py)。校验固定 podspec 的 SHA-256，将插件复制到 `build/apple-plugins/<platform>/`，把共享 C 绑定放进 Pod 根目录并重定向生成的插件链接。framework 公共头文件在副本中展平，同步 wrapper 的 include 路径，兼容 Xcode 的 Headers 拷贝阶段。保留上游源码、许可和符号链接；不修改 Pub 缓存或依赖提交。升级依赖时必须重新审查校验值和目录布局。
 - Linux 显式安装 `libva-wayland2`，打包前输出固定 libmpv 的完整 `ldd` 结果。继续使用 Native Assets 的库，禁止用系统 mpv 替换。
@@ -71,7 +71,7 @@ macOS 部署下限提高至 13.0 的依据已核对固定 Flutter SDK `packages/
 
 Windows 本地 `tool/check.ps1 -SkipPub` 通过格式、分析和 4070 项测试，根应用 13 项既有跳过，mux 10 项因未配置 `BILI_MUX_LIBRARY` 跳过；两项 Apple staging 回归、18 项 Linux 纯 Python 回归、PowerShell／Bash 语法和诊断脱敏检查通过。7 项 POSIX shell 运行时检查未在此 Windows 环境执行成功，交由 Ubuntu CI 验证。远端构建结果将在修复推送后的 CI 核验；以上不代表设备安装、音画或性能验收通过。
 
-[CI #217](https://github.com/CKopoer/BiliSail/actions/runs/40798307861) 的全部检查通过，包括 Ubuntu 上的 25 项 Linux 脚本检查、Apple staging 和 Ruby 语法检查。首次 staging 已解决源文件未收录，但 Apple 构建暴露了 framework umbrella header 仍引用嵌套 `mpv/client.h` 的问题，因此补上上述展平处理；本地对真实固定 C 绑定及公共头文件执行 Clang 语法检查通过，补改后的 `-Stage Lint -SkipPub` 通过。平台构建结论以包含补改的后续 CI 为准。
+[CI #217](https://github.com/ZakiuC/BiliSail/actions/runs/40798307861) 的全部检查通过，包括 Ubuntu 上的 25 项 Linux 脚本检查、Apple staging 和 Ruby 语法检查。首次 staging 已解决源文件未收录，但 Apple 构建暴露了 framework umbrella header 仍引用嵌套 `mpv/client.h` 的问题，因此补上上述展平处理；本地对真实固定 C 绑定及公共头文件执行 Clang 语法检查通过，补改后的 `-Stage Lint -SkipPub` 通过。平台构建结论以包含补改的后续 CI 为准。
 
 该次 Linux x64 构建、AppImage／Flatpak 打包及已安装 Flatpak Runtime 的依赖检查通过，Android 构建通过。Windows 的 LZMA 工具修复在本地用相同 SHA-256 的真实固定 `.7z` 验证了目录读取和 DLL 解压；后续远端 Windows／Apple 结果仍需复验。
 
@@ -87,4 +87,4 @@ CI #220 的 Windows 资源缓存准备及原生 hook 已通过，后续干净 C+
 
 上述补改后，完整 `tool/check.ps1 -SkipPub` 通过 4071 项测试（根 3360、API 492、播放器 96、弹幕 118、mux 5），13 项根测试及未配置原生库的 10 项 mux 用例沿用跳过。9 项受控原生生命周期／队列／尺寸回归和干净目录的 C API 编译通过。没有可连接的 DTD／调试应用，未做热重载；macOS 首帧顺序由后续目标 Release smoke 验证。
 
-最终 [CI #221](https://github.com/CKopoer/BiliSail/actions/runs/40804720827) 在代码提交 `64acaa709315b9c91e15c67ae173f56b05689570` 上全部通过：根检查、子包检查与原生 mux 检查，以及 Android arm64、Windows x64、macOS arm64／x64、iOS arm64、Linux x64 六个构建任务均成功，六份平台产物均已上传。Windows 完成 EXE／MSI／MSIX 打包与 MSIX 签名核验；两种 macOS 架构均完成待打包应用的签名校验、首帧及跨进程合成 Keychain 写入／读取删除／删除确认，并生成 DMG。Linux 完成 AppImage／Flatpak 打包和已安装 Flatpak Runtime 的依赖检查。上述结果不覆盖设备安装升级、Gatekeeper／系统证书信任、真实账号、音画播放或长期性能验收。
+最终 [CI #221](https://github.com/ZakiuC/BiliSail/actions/runs/40804720827) 在代码提交 `64acaa709315b9c91e15c67ae173f56b05689570` 上全部通过：根检查、子包检查与原生 mux 检查，以及 Android arm64、Windows x64、macOS arm64／x64、iOS arm64、Linux x64 六个构建任务均成功，六份平台产物均已上传。Windows 完成 EXE／MSI／MSIX 打包与 MSIX 签名核验；两种 macOS 架构均完成待打包应用的签名校验、首帧及跨进程合成 Keychain 写入／读取删除／删除确认，并生成 DMG。Linux 完成 AppImage／Flatpak 打包和已安装 Flatpak Runtime 的依赖检查。上述结果不覆盖设备安装升级、Gatekeeper／系统证书信任、真实账号、音画播放或长期性能验收。

@@ -26,7 +26,7 @@
 
 ## 2026-11-01 图片预览系统栏灰条（issue #46）
 
-[Issue #46](https://github.com/CKopoer/BiliSail/issues/46) 报告 Android／Samsung Tab S9 在图片预览时，系统手势条周围出现灰色长条；截图中的顶部状态区也被压暗。
+[Issue #46](https://github.com/ZakiuC/BiliSail/issues/46) 报告 Android／Samsung Tab S9 在图片预览时，系统手势条周围出现灰色长条；截图中的顶部状态区也被压暗。
 
 原因是[共享图片查看器](../../lib/shared/ui/image_viewer.dart)虽然使用 `Dialog.fullscreen`，承载它的 `DialogRoute` 仍默认 `useSafeArea: true`。路由在构建查看器之前就消耗系统栏安全区，查看器的底色和模糊图片背景只能绘制到安全区内，系统栏区域露出下方页面与 `black54` 模态遮罩的混合色。查看器内部已有 `SafeArea`，因此应由内部保护交互内容，而不应裁掉外部背景。此外，原系统栏样式仍为 Android 14 及以下指定不透明主题底色，无法随模态遮罩或模糊背景自然合成。
 

@@ -1,6 +1,6 @@
 # 播放器双指缩放与中部全屏手势
 
-日期：2026-11-06。需求：[GitHub #64](https://github.com/CKopoer/BiliSail/issues/64)。按用户要求参考 PiliPlus 的相关手势，不增加画面旋转。
+日期：2026-11-06。需求：[GitHub #64](https://github.com/ZakiuC/BiliSail/issues/64)。按用户要求参考 PiliPlus 的相关手势，不增加画面旋转。
 
 ## 行为和采用范围
 
