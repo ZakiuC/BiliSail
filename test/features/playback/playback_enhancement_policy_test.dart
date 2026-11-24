@@ -81,7 +81,11 @@ void main() {
 
       for (final expected
           in PlaybackEnhancementPolicy.highestBitrateQualityOrder) {
-        expect(select(remaining, quality: 16, highest: true).quality, expected);
+        // Requesting an absent ceiling tier falls back along the BBZQ order.
+        expect(
+          select(remaining, quality: 300, highest: true).quality,
+          expected,
+        );
         remaining.removeWhere((track) => track.id == expected);
       }
     });
@@ -89,8 +93,10 @@ void main() {
     test('prefers 1080P high bitrate over 1080P60 when enabled', () {
       final tracks = [_track(116, 'avc1'), _track(112, 'avc1')];
 
-      expect(select(tracks, quality: 16, highest: true).quality, 112);
-      expect(select(tracks, quality: 120).quality, 116);
+      // An absent 120 falls back along the BBZQ order where 112 outranks 116.
+      expect(select(tracks, quality: 120, highest: true).quality, 112);
+      // The user's explicit 1080P60 tier always wins over reordering.
+      expect(select(tracks, quality: 116, highest: true).quality, 116);
     });
 
     test('keeps codec preference then highest bandwidth within a tier', () {
@@ -98,7 +104,7 @@ void main() {
       final high = _track(112, 'avc1', bandwidth: 3000, name: 'high');
       final hevc = _track(112, 'hev1.1.6.L120', bandwidth: 9000);
 
-      final media = select([low, hevc, high], highest: true);
+      final media = select([low, hevc, high], quality: 112, highest: true);
 
       expect(media.video.bandwidth, 3000);
       expect(media.video.codec, 'avc1');
@@ -112,6 +118,7 @@ void main() {
           _track(116, 'avc1'),
           _track(112, 'avc1'),
         ],
+        quality: 127,
         highest: true,
         avoidHdrDolby: true,
       );

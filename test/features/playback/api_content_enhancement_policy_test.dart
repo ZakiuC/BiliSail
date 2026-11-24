@@ -13,22 +13,24 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   for (final highest in [false, true]) {
     test(
-      'PGC highest=$highest preserves or overrides request and selection',
+      'PGC highest=$highest keeps the requested tier and raises the ceiling',
       () async {
         final transport = _Transport();
         final repository = _repository(transport, highest: highest);
 
         final media = await repository.resolve(
           const PgcPlaybackTarget('123'),
-          quality: 80,
+          quality: 116,
           cancellation: RequestCancellation(),
         );
 
         final query = transport.requests.single.queryParameters;
-        expect(query['qn'], highest ? '127' : '80');
+        expect(query['qn'], highest ? '127' : '116');
         expect(query['fnval'], '4048');
         expect(query['fourk'], '1');
-        expect(media.quality, highest ? 112 : 80);
+        // The explicit tier always wins; unlock only raises the request
+        // ceiling so the ladder is available for manual selection.
+        expect(media.quality, 116);
       },
     );
   }
