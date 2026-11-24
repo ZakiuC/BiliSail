@@ -158,7 +158,7 @@ void main() {
       final media = await repository.resolve(
         const VideoId('BV1VNxr63EZp'),
         '43202641987',
-        quality: 80,
+        quality: 127,
         cancellation: RequestCancellation(),
       );
 

@@ -77,8 +77,11 @@ PlaybackMedia selectDashMedia(
       videoOnly ? '未取得可用的预览视频轨道' : '未取得可用的视频和音频轨道',
     );
   }
-  final selectedQuality = unlockHighestBitrate
-      ? videos.first.id
+  // The user's explicit tier wins when it exists; unlockHighestBitrate only
+  // changes the ladder ordering (and the request ceiling), never the pick.
+  // Without this, choosing 1080P+ while unlock is on silently plays 4K.
+  final selectedQuality = videos.any((track) => track.id == quality)
+      ? quality
       : (videos.where((track) => track.id <= quality).firstOrNull ??
                 videos.last)
             .id;

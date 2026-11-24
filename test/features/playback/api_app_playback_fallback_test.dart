@@ -55,6 +55,20 @@ void main() {
     },
   );
 
+  test('an explicit 1080P+ choice plays 1080P+, never forced to 4K', () async {
+    final web = _WebTransport();
+    final app = _AppProvider(_appInfo());
+    final media = await _repository(web, app, cdnStatus: 206).resolve(
+      const VideoId('BV1VNxr63EZp'),
+      '43202641987',
+      quality: 112,
+      cancellation: RequestCancellation(),
+    );
+    // The user's exact tier wins even while unlock ordering is active.
+    expect(media.quality, 112);
+    expect(media.qualities, contains(120));
+  });
+
   test('ordinary 1080P does not add an App request', () async {
     final web = _WebTransport();
     final app = _AppProvider(_appInfo());

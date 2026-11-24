@@ -315,8 +315,7 @@ void main() {
       jsonEncode([
         _jsonRelease(
           'v1.0.0',
-          url:
-              'https://github.com/ZakiuC/BiliSail/releases/tag/v1.0.0?token=x',
+          url: 'https://github.com/ZakiuC/BiliSail/releases/tag/v1.0.0?token=x',
         ),
       ]),
     ]) {

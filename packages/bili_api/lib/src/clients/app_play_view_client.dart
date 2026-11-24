@@ -31,17 +31,27 @@ final class AppPlayViewProfile {
   );
 
   /// Phone profile, for playurl reads that the HD profile caps at 1080P.
+  /// The build mirrors a current official phone release; older builds can be
+  /// silently clamped to fewer tiers by the server.
   static const phone = AppPlayViewProfile(
     mobiApp: 'android',
     device: 'phone',
-    build: 9000100,
-    versionName: '9.0.1',
+    build: 9190000,
+    versionName: '9.19.0',
   );
 
   final String mobiApp;
   final String device;
   final int build;
   final String versionName;
+
+  AppPlayViewProfile copyWith({int? build, String? versionName}) =>
+      AppPlayViewProfile(
+        mobiApp: mobiApp,
+        device: device,
+        build: build ?? this.build,
+        versionName: versionName ?? this.versionName,
+      );
 
   String get key => '$mobiApp/$build';
 }

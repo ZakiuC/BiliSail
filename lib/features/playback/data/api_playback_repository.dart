@@ -391,34 +391,83 @@ class ApiPlaybackRepository
       cdnPreference: cdn,
       headers: fromApp ? appHeaders : webHeaders,
     );
-    // A returned high tier is not automatically playable: a CDN refusal must
-    // degrade to 1080P instead of letting the player fail to open the source.
+    // The menu must match reality: probe every App-sourced high tier (in
+    // parallel) and keep only the ones the CDN actually serves, so no dead
+    // entry survives in the quality list.
     var probeStatus = 0;
-    if (fromApp && media.quality > 80) {
-      final status = await api.probeMediaStatus(
-        media.video.urls.first,
-        headers: appHeaders,
-      );
-      probeStatus = status ?? 0;
-      // null means the probe itself was inconclusive; keep the higher tier.
-      if (status != null && status != 200 && status != 206) {
-        // The whole App set shares one signature policy: fall back to the Web
-        // 1080P source rather than trying other App tiers.
-        final fallback = appInfo == null ? source : info;
-        media = selectDashMedia(
-          fallback,
-          audioQuality: audioQuality,
-          quality: 80,
-          preferredCodec: preferredCodec,
-          avoidHdrDolby: avoidHdr,
-          cdnPreference: cdn,
-          headers: appInfo == null ? appHeaders : webHeaders,
-        );
-        fromApp = appInfo == null;
-        media = media.restrictQualities([
-          for (final option in media.qualities)
-            if (option <= 80) option,
+    if (fromApp) {
+      final highTiers = source.dashVideo
+          .map((track) => track.id)
+          .where((id) => id > 80)
+          .toSet();
+      if (highTiers.isNotEmpty) {
+        final playable = await Future.wait([
+          for (final tier in highTiers.take(8))
+            () async {
+              final track = source.dashVideo.firstWhere(
+                (candidate) => candidate.id == tier,
+              );
+              final status = await api.probeMediaStatus(
+                track.url,
+                headers: appHeaders,
+              );
+              // null means inconclusive; keep the tier rather than over-hide.
+              return (
+                tier: tier,
+                playable: status == null || status == 200 || status == 206,
+                status: status ?? 0,
+              );
+            }(),
         ]);
+        probeStatus = playable
+            .firstWhere(
+              (result) => result.tier == media.quality,
+              orElse: () => (tier: 0, playable: true, status: 0),
+            )
+            .status;
+        final playableTiers = [
+          for (final result in playable)
+            if (result.playable) result.tier,
+        ];
+        final anyHighPlayable = highTiers
+            .take(8)
+            .any((tier) => playableTiers.contains(tier));
+        if (anyHighPlayable) {
+          // Keep verified tiers (and everything the Web source already offers
+          // at or below 1080P) so the menu never lists a dead entry.
+          final webLow = info.dashVideo
+              .map((track) => track.id)
+              .where((id) => id <= 80);
+          media = media.restrictQualities(
+            {...webLow, ...playableTiers}.toList()..sort(),
+          );
+          if (!playableTiers.contains(media.quality) && media.quality > 80) {
+            // The requested tier was rejected: pick the best verified one.
+            media = selectDashMedia(
+              source,
+              audioQuality: audioQuality,
+              quality: playableTiers.reduce((a, b) => a > b ? a : b),
+              preferredCodec: preferredCodec,
+              unlockHighestBitrate: enhancements.unlockHighestBitrate,
+              avoidHdrDolby: avoidHdr,
+              cdnPreference: cdn,
+              headers: appHeaders,
+            );
+          }
+        } else {
+          // Every high tier is refused: fall back to the whole Web source.
+          final fallback = appInfo == null ? source : info;
+          media = selectDashMedia(
+            fallback,
+            audioQuality: audioQuality,
+            quality: 80,
+            preferredCodec: preferredCodec,
+            avoidHdrDolby: avoidHdr,
+            cdnPreference: cdn,
+            headers: appInfo == null ? appHeaders : webHeaders,
+          );
+          fromApp = appInfo == null;
+        }
       }
     }
     playSource = fromApp ? 'app' : 'web';
@@ -428,8 +477,8 @@ class ApiPlaybackRepository
       requestedQuality: quality,
       selectedQuality: media.quality,
       probeHttpStatus: probeStatus == 0 ? null : probeStatus,
-      videoQualities: info.dashVideo.map((track) => track.id).toList(),
-      audioQualities: info.dashAudio.map((track) => track.id).toList(),
+      videoQualities: source.dashVideo.map((track) => track.id).toList(),
+      audioQualities: source.dashAudio.map((track) => track.id).toList(),
     );
     return media;
   }, cancellation: cancellation);
