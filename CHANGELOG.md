@@ -3,6 +3,24 @@
 应用版本号只维护在根 `pubspec.yaml`（`x.y.z+N`），每个可构建的变更都会递增。
 更早版本见 [GitHub Releases](https://github.com/CKopoer/BiliSail/releases)。
 
+## 1.3.1+13
+
+### 修复
+
+- **不再显示不可播放的清晰度。** App 高档位探测被 CDN 拒绝（403）时，1080P 以上的档位会从
+  清晰度菜单移除，避免“菜单里有 4K、点了却播不了”。
+
+### 结论
+
+1.3.1+12 的日志同时满足：`appAuthorized=true`、`appProtocol=playview_phone`、`requestedQuality=127`、
+`trialRequested=true`，服务端返回了 `120/112/80/64/32/16`，但高档地址 `probeHttpStatus=403`。
+
+也就是说请求格式、登录状态和协议都已正确；**限制在服务端的取流授权**，与客户端参数无关。
+同一账号在 BBZQ（运行于官方客户端内）可以播放 4K，差距来自官方客户端自身的凭证与授权通道，
+BiliSail 用自己的 App 令牌无法换取可播的高档地址。
+
+因此本版本不再宣称“解锁 4K／会员画质”，行为改为：能播的档位正常播放，不能播的档位不显示。
+
 ## 1.3.1+12
 
 ### 修复

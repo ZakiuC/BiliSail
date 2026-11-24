@@ -128,7 +128,8 @@ void main() {
         cancellation: RequestCancellation(),
       );
       expect(media.quality, 80);
-      expect(media.qualities, [16, 32, 64, 80, 112, 120, 126]);
+      // Rejected App tiers are hidden so the menu never offers dead entries.
+      expect(media.qualities, [16, 32, 64, 80]);
     },
   );
 

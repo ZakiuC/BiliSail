@@ -397,6 +397,12 @@ class ApiPlaybackRepository
           cdnPreference: cdn,
           headers: headers,
         );
+        // One rejected App tier means the account cannot fetch any of the
+        // higher ones either; hide them instead of offering dead entries.
+        media = media.restrictQualities([
+          for (final option in media.qualities)
+            if (option <= 80) option,
+        ]);
       }
     }
     requests.diagnostics?.record(

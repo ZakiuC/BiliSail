@@ -99,6 +99,34 @@ final class PlaybackMedia {
       .firstOrNull
       ?.quality;
 
+  /// Keeps only tiers the caller proved playable, so the quality menu never
+  /// advertises a stream the CDN rejects. The current quality is preserved.
+  PlaybackMedia restrictQualities(List<int> playable) {
+    final kept = [
+      for (final option in qualities)
+        if (playable.contains(option)) option,
+    ];
+    if (kept.isEmpty || kept.length == qualities.length) return this;
+    return PlaybackMedia(
+      video: video,
+      audio: audio,
+      audioTracks: audioTracks,
+      kind: kind,
+      quality: quality,
+      qualities: List.unmodifiable(kept),
+      qualityLabels: qualityLabels,
+      duration: duration,
+      headers: headers,
+      voices: voices,
+      voice: voice,
+      loudness: loudness,
+      liveStreams: liveStreams,
+      liveStream: liveStream,
+      liveRoomId: liveRoomId,
+      pgcSkipSegments: pgcSkipSegments,
+    );
+  }
+
   PlaybackMedia selectAudioQuality(AudioQualityPreference preference) {
     if (kind != PlaybackMediaKind.dash || audioTracks.isEmpty) return this;
     final selected = preference.fallbackOrder
