@@ -91,7 +91,7 @@ void main() {
       expect(phoneMetadata, isNot(contains('android_hd')));
       expect(phoneMetadata, contains('android'));
       expect(phoneDevice, contains('phone'));
-      expect(phone['user-agent'], contains('mobi_app/android build/9000100'));
+      expect(phone['user-agent'], contains('mobi_app/android build/9190000'));
       expect(phone['content-type'], 'application/grpc');
     },
   );

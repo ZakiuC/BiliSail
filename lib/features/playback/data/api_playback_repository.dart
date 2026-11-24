@@ -375,8 +375,8 @@ class ApiPlaybackRepository
       // PlayView 签发的视频 URL 要求 App UA，且带 Referer 会被 CDN 拒绝。
       'User-Agent':
           'Mozilla/5.0 BiliDroid/9.0.1 (bbcallen@gmail.com) os/android '
-          'model/phone mobi_app/android build/9000100 channel/master '
-          'innerVer/9000100 osVer/17 network/2',
+          'model/phone mobi_app/android build/9190000 channel/master '
+          'innerVer/9190000 osVer/17 network/2',
     };
     final appWholeSource = appInfo ?? (playSource == 'app' ? info : null);
     var fromApp = appWholeSource != null;

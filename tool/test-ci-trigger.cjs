@@ -24,7 +24,7 @@ test('branch pushes run until an open PR covers the same repository head', async
   assert.equal(await shouldRunCi({ ...options, context }), true);
   assert.equal(options.requests[0].head, 'ZakiuC:codex/example');
   assert.equal(options.requests[0].state, 'open');
-  const covered = fixture([{ head: { repo: { full_name: 'ckopoer/bilisail' } } }]);
+  const covered = fixture([{ head: { repo: { full_name: 'zakiuc/bilisail' } } }]);
   assert.equal(await shouldRunCi({ ...covered, context }), false);
 });
 

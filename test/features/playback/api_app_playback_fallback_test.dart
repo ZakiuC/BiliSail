@@ -51,7 +51,7 @@ void main() {
       // App headers: BiliDroid UA and no Referer.
       expect(media.headers.containsKey('Referer'), isFalse);
       expect(media.headers['User-Agent'], contains('BiliDroid'));
-      expect(media.headers['User-Agent'], contains('build/9000100'));
+      expect(media.headers['User-Agent'], contains('build/9190000'));
     },
   );
 
