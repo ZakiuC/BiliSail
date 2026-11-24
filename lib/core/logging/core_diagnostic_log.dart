@@ -16,6 +16,7 @@ enum CoreDiagnosticEvent {
   unhandledError,
   requestFinished,
   playInfoResolved,
+  appPlayInfoResolved,
   sessionChanged,
   downloadState,
   downloadMediaScan,
@@ -67,6 +68,8 @@ final class CoreDiagnosticLog {
     List<Object?>? videoQualities,
     List<Object?>? audioQualities,
     String? playSource,
+    String? appProtocol,
+    bool? trialRequested,
   }) {
     _writer.record({
       'time': DateTime.now().toUtc().toIso8601String(),
@@ -83,6 +86,8 @@ final class CoreDiagnosticLog {
       'videoQualities': ?_qualityList(videoQualities),
       'audioQualities': ?_qualityList(audioQualities),
       'playSource': ?_safePlaySource(playSource),
+      'appProtocol': ?_safeAppProtocol(appProtocol),
+      'trialRequested': ?trialRequested,
       if (error != null) 'errorType': _safeType(error),
       if (error is AppFailure) 'failure': error.kind.name,
       if (stack != null) 'stack': _safeStack(stack),
@@ -103,6 +108,9 @@ final class CoreDiagnosticLog {
 
   static String? _safePlaySource(String? playSource) =>
       const {'web', 'app', 'merged'}.contains(playSource) ? playSource : null;
+
+  static String? _safeAppProtocol(String? protocol) =>
+      const {'playview', 'json'}.contains(protocol) ? protocol : null;
 
   static String _safeType(Object error) {
     final type = error.runtimeType.toString();

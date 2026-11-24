@@ -5,6 +5,7 @@ export 'src/app_profile.dart' show AppDeviceInfo;
 export 'src/clients/cast_client.dart';
 export 'src/clients/app_recommendation_client.dart';
 export 'src/clients/app_playback_client.dart';
+export 'src/clients/app_play_view_client.dart';
 export 'src/clients/app_passport_client.dart';
 export 'src/clients/password_sms_login_client.dart';
 export 'src/models/app_recommendation_models.dart';

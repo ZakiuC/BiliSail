@@ -363,6 +363,7 @@ class AppDependencies {
       identityRevision: () => dependencies.appRecommendationIdentity.revision,
       invalidateIdentity: () =>
           dependencies.appRecommendationIdentity.invalidateAuthorization(),
+      playViewTransport: sponsorTransport,
     );
     final playbackRepository = ApiPlaybackRepository(
       api,

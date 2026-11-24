@@ -63,6 +63,16 @@ abstract interface class ApiJsonTransport {
   });
 }
 
+abstract interface class ApiGrpcTransport {
+  Future<ApiHttpResponse> postGrpc(
+    Uri uri, {
+    required Uint8List body,
+    required Map<String, String> headers,
+    required Duration timeout,
+    ApiCancellation? cancellation,
+  });
+}
+
 abstract interface class ApiMultipartTransport {
   Future<ApiHttpResponse> postMultipart(
     Uri uri, {
@@ -81,6 +91,7 @@ final class DioApiTransport
         ApiHeadTransport,
         ApiFormTransport,
         ApiJsonTransport,
+        ApiGrpcTransport,
         ApiMultipartTransport,
         ApiBoundedTransport {
   DioApiTransport({Dio? dio}) : _dio = dio ?? Dio();
@@ -292,6 +303,22 @@ final class DioApiTransport
         contentType: DioMediaType.parse(mimeType),
       ),
     }),
+  );
+
+  @override
+  Future<ApiHttpResponse> postGrpc(
+    Uri uri, {
+    required Uint8List body,
+    required Map<String, String> headers,
+    required Duration timeout,
+    ApiCancellation? cancellation,
+  }) => _send(
+    uri,
+    headers: headers,
+    timeout: timeout,
+    cancellation: cancellation,
+    body: body,
+    contentType: 'application/grpc',
   );
 
   @override

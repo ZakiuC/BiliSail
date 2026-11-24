@@ -46,6 +46,67 @@ void main() {
     expect(mergeApiPlayInfo(primary, supplement), same(primary));
   });
 
+  test('URL-only variants do not create a merged response', () {
+    final primary = _info(
+      videos: [_track(80, 'avc1.640028', bandwidth: 1000)],
+      audios: [_track(30280, 'mp4a.40.2', bandwidth: 192000)],
+    );
+    final supplement = _info(
+      videos: [
+        _track(
+          80,
+          'avc1.640028',
+          bandwidth: 1000,
+          url: Uri.parse(
+            'https://upos-sz-mirror.bilivideo.com/80-avc1.640028-1000.m4s?deadline=2',
+          ),
+        ),
+      ],
+      audios: [
+        _track(
+          30280,
+          'mp4a.40.2',
+          bandwidth: 192000,
+          url: Uri.parse('https://app-cdn.example/refresh/audio.m4s'),
+        ),
+      ],
+    );
+
+    expect(mergeApiPlayInfo(primary, supplement), same(primary));
+  });
+
+  test('real additions still exclude URL-only variants', () {
+    final primary = _info(
+      videos: [_track(80, 'avc1.640028', bandwidth: 1000)],
+      audios: [_track(30280, 'mp4a.40.2', bandwidth: 192000)],
+    );
+    final supplement = _info(
+      videos: [
+        _track(
+          80,
+          'avc1.640028',
+          bandwidth: 1000,
+          url: Uri.parse('https://app-cdn.example/refresh/video.m4s'),
+        ),
+        _track(120, 'avc1.640032', bandwidth: 8000),
+      ],
+      audios: [
+        _track(
+          30280,
+          'mp4a.40.2',
+          bandwidth: 192000,
+          url: Uri.parse('https://app-cdn.example/refresh/audio.m4s'),
+        ),
+        _track(30232, 'mp4a.40.29', bandwidth: 132000),
+      ],
+      accepted: [120, 80],
+    );
+
+    final merged = mergeApiPlayInfo(primary, supplement);
+    expect(merged.dashVideo.map((track) => track.id), [80, 120]);
+    expect(merged.dashAudio.map((track) => track.id), [30280, 30232]);
+  });
+
   for (final reason in ['preview', 'duration', 'voice']) {
     test('rejects an incompatible supplement: $reason', () {
       final primary = _info(
@@ -86,12 +147,14 @@ ApiPlayInfo _info({
   productionType: productionType,
 );
 
-ApiMediaTrack _track(int id, String codec, {int bandwidth = 1000}) =>
+ApiMediaTrack _track(int id, String codec, {int bandwidth = 1000, Uri? url}) =>
     ApiMediaTrack(
       id: id,
-      url: Uri.parse(
-        'https://upos-sz-mirror.bilivideo.com/$id-$codec-$bandwidth.m4s',
-      ),
+      url:
+          url ??
+          Uri.parse(
+            'https://upos-sz-mirror.bilivideo.com/$id-$codec-$bandwidth.m4s',
+          ),
       backupUrls: const [],
       bandwidth: bandwidth,
       mimeType: id > 30000 ? 'audio/mp4' : 'video/mp4',

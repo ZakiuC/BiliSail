@@ -1,5 +1,11 @@
 # 第三方来源与分发检查
 
+## 2026-11-24 官方 PlayView 协议互通
+
+以 MIT 的 [mikufans-proto f9bcfcd](https://github.com/mikufans-project/mikufans-proto/commit/f9bcfcd) 核对官方 PlayViewUnite、VideoVod、VodInfo、DASH 与 gRPC metadata 的公开字段编号；仅将字段编号和标准 Protobuf 线格式作为互通协议事实，未复制其生成的 Rust 源码。
+
+只读核对 GPLv3 的 [PiliPlus 217fb54](https://github.com/bggRGjQaUbCoE/PiliPlus/commit/217fb54)，确认 Dio `application/grpc` 单帧传输与公开 metadata 的兼容性；BiliSail 的帧、编解码、错误分类、取消和会话隔离均独立实现，未复制 PiliPlus 应用源码、生成物、资源或账号数据。
+
 ## 2026-11-20 专栏正文解析
 
 [html 0.15.7](https://pub.dev/packages/html/versions/0.15.7) 用于在 Dart 中解析旧版专栏的 HTML 正文。该包按 MIT 许可分发，传递依赖 [csslib 1.0.2](https://pub.dev/packages/csslib/versions/1.0.2) 使用 BSD-3-Clause。两者均为纯 Dart，包内原始 LICENSE 由 Flutter notices 收集。

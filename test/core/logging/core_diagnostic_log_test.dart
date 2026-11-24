@@ -177,6 +177,32 @@ void main() {
     },
   );
 
+  test('App protocol diagnostics use a fixed protocol allowlist', () async {
+    final log = CoreDiagnosticLog(directory);
+    log.record(
+      CoreDiagnosticEvent.appPlayInfoResolved,
+      appProtocol: 'playview',
+      requestedQuality: 127,
+      trialRequested: true,
+      videoQualities: const [126, 120],
+    );
+    log.record(
+      CoreDiagnosticEvent.appPlayInfoResolved,
+      appProtocol: 'https://SECRET.invalid/?token=SECRET',
+    );
+    await log.close();
+
+    final events = await readEvents();
+    expect(events[0]['appProtocol'], 'playview');
+    expect(events[0]['trialRequested'], isTrue);
+    expect(events[1].containsKey('appProtocol'), isFalse);
+    expect(events[1].containsKey('trialRequested'), isFalse);
+    expect(
+      (await (await singleLogFile()).readAsString()),
+      isNot(contains('SECRET')),
+    );
+  });
+
   test('omitted play info fields preserve the existing event shape', () async {
     final log = CoreDiagnosticLog(directory);
     log.record(CoreDiagnosticEvent.ready);

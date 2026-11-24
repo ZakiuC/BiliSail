@@ -3,8 +3,9 @@ import 'package:bili_api/bili_api.dart';
 /// Adds server-returned tracks from a second read of the same video.
 ///
 /// Preview clips, mismatched durations and alternate voices must never leak
-/// into the primary source. Exact duplicate tracks are ignored, while a real
-/// higher-bitrate representation with the same quality/codec remains eligible.
+/// into the primary source. Equivalent tracks are ignored even when the second
+/// endpoint returns different CDN or signed URLs, while a real higher-bitrate
+/// representation with the same quality/codec remains eligible.
 ApiPlayInfo mergeApiPlayInfo(ApiPlayInfo primary, ApiPlayInfo supplement) {
   if (primary.isPreview || supplement.isPreview) return primary;
   if (primary.currentLanguage != supplement.currentLanguage ||
@@ -53,11 +54,6 @@ ApiPlayInfo mergeApiPlayInfo(ApiPlayInfo primary, ApiPlayInfo supplement) {
   );
 }
 
-(String, int, String, int, String, Uri) _identity(ApiMediaTrack track) => (
-  track.mimeType,
-  track.id,
-  track.codecs,
-  track.bandwidth,
-  track.url.path,
-  track.url,
-);
+// URLs locate a representation; they do not define its media identity.
+(String, int, String, int) _identity(ApiMediaTrack track) =>
+    (track.mimeType, track.id, track.codecs, track.bandwidth);
