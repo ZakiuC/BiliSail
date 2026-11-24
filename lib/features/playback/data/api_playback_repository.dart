@@ -356,26 +356,50 @@ class ApiPlaybackRepository
             ))) {
       throw const AppFailure(AppFailureKind.playback, '所选语音暂不可用，请切回原声');
     }
-    final media = selectDashMedia(
+    final audioQuality =
+        await audioQualityPreference?.call() ?? AudioQualityPreference.aac192;
+    final avoidHdr = await avoidHdrPreference?.call() ?? false;
+    final cdn = await cdnPreference?.call() ?? MediaCdnPreference.automatic;
+    const headers = {
+      'Referer': 'https://www.bilibili.com/',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/132.0.0.0 Safari/537.36',
+    };
+    var media = selectDashMedia(
       info,
-      audioQuality:
-          await audioQualityPreference?.call() ?? AudioQualityPreference.aac192,
+      audioQuality: audioQuality,
       quality: quality,
       preferredCodec: preferredCodec,
       unlockHighestBitrate: enhancements.unlockHighestBitrate,
-      avoidHdrDolby: await avoidHdrPreference?.call() ?? false,
-      cdnPreference:
-          await cdnPreference?.call() ?? MediaCdnPreference.automatic,
-      headers: {
-        'Referer': 'https://www.bilibili.com/',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/132.0.0.0 Safari/537.36',
-      },
+      avoidHdrDolby: avoidHdr,
+      cdnPreference: cdn,
+      headers: headers,
     );
+    // A returned high tier is not automatically playable: VIP-only DASH URLs
+    // answer 403 at the CDN. Probe once and fall back to 1080P instead of
+    // letting the player fail to open the source.
+    var probeStatus = 0;
+    if (media.quality > 80) {
+      final status = await api.probeMediaStatus(media.video.urls.first);
+      probeStatus = status ?? 0;
+      // null means the probe itself was inconclusive; keep the higher tier.
+      if (status != null && status != 200 && status != 206) {
+        media = selectDashMedia(
+          info,
+          audioQuality: audioQuality,
+          quality: 80,
+          preferredCodec: preferredCodec,
+          avoidHdrDolby: avoidHdr,
+          cdnPreference: cdn,
+          headers: headers,
+        );
+      }
+    }
     requests.diagnostics?.record(
       CoreDiagnosticEvent.playInfoResolved,
       playSource: playSource,
       requestedQuality: quality,
       selectedQuality: media.quality,
+      probeHttpStatus: probeStatus == 0 ? null : probeStatus,
       videoQualities: info.dashVideo.map((track) => track.id).toList(),
       audioQualities: info.dashAudio.map((track) => track.id).toList(),
     );

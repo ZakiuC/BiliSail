@@ -177,6 +177,36 @@ final class BiliApiClient {
   }
 
   /// Probes the canonical article URL without sending credentials or following it.
+  /// Status-only probe for a public CDN media URL.
+  ///
+  /// Sends a one-byte range with no cookies and no retries, so a signed stream
+  /// the CDN refuses (for example a VIP-only 4K URL answered with 403) is
+  /// detected before the player opens it. Returns null when probing is not
+  /// possible; callers must treat null as "unknown", never as success.
+  Future<int?> probeMediaStatus(
+    Uri url, {
+    Duration timeout = const Duration(seconds: 6),
+  }) async {
+    if (url.scheme != 'https' ||
+        url.host.isEmpty ||
+        url.userInfo.isNotEmpty ||
+        timeout <= Duration.zero) {
+      return null;
+    }
+    try {
+      final response = await _transport.get(
+        url,
+        headers: const {'Range': 'bytes=0-1', 'Accept': '*/*'},
+        timeout: timeout,
+      );
+      return response.statusCode;
+    } on ApiFailure {
+      return null;
+    } on Exception {
+      return null;
+    }
+  }
+
   Future<Uri?> articleRedirect(String id, {ApiRequestContext? context}) async {
     if (!RegExp(r'^[1-9][0-9]{0,127}$').hasMatch(id)) {
       throw ArgumentError('Invalid article ID');

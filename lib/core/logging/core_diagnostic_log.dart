@@ -70,6 +70,7 @@ final class CoreDiagnosticLog {
     String? playSource,
     String? appProtocol,
     bool? trialRequested,
+    int? probeHttpStatus,
   }) {
     _writer.record({
       'time': DateTime.now().toUtc().toIso8601String(),
@@ -88,6 +89,7 @@ final class CoreDiagnosticLog {
       'playSource': ?_safePlaySource(playSource),
       'appProtocol': ?_safeAppProtocol(appProtocol),
       'trialRequested': ?trialRequested,
+      'probeHttpStatus': ?_positiveQuality(probeHttpStatus),
       if (error != null) 'errorType': _safeType(error),
       if (error is AppFailure) 'failure': error.kind.name,
       if (stack != null) 'stack': _safeStack(stack),

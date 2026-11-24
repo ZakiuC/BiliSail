@@ -115,12 +115,45 @@ void main() {
       ),
     );
   });
+
+  test(
+    'a 403 high-tier CDN URL degrades to 1080P instead of failing',
+    () async {
+      final web = _WebTransport();
+      final app = _AppProvider(_appInfo());
+      final media = await _repository(web, app, cdnStatus: 403).resolve(
+        const VideoId('BV1VNxr63EZp'),
+        '43202641987',
+        quality: 127,
+        cancellation: RequestCancellation(),
+      );
+      expect(media.quality, 80);
+      expect(media.qualities, [16, 32, 64, 80, 112, 120, 126]);
+    },
+  );
+
+  test('a playable high tier is kept when the probe succeeds', () async {
+    final web = _WebTransport();
+    final app = _AppProvider(_appInfo());
+    final media = await _repository(web, app, cdnStatus: 206).resolve(
+      const VideoId('BV1VNxr63EZp'),
+      '43202641987',
+      quality: 127,
+      cancellation: RequestCancellation(),
+    );
+    expect(media.quality, 126);
+  });
 }
 
-ApiPlaybackRepository _repository(_WebTransport web, AppPlayInfoProvider app) {
+ApiPlaybackRepository _repository(
+  _WebTransport web,
+  AppPlayInfoProvider app, {
+  int cdnStatus = 200,
+}) {
   final requests = ApiRequests();
   final api = BiliApiClient(transport: web, sessionProvider: requests);
   addTearDown(api.close);
+  web.cdnStatus = cdnStatus;
   return ApiPlaybackRepository(api, requests, appPlayInfo: app);
 }
 
@@ -151,6 +184,7 @@ final class _AppProvider implements AppPlayInfoProvider {
 final class _WebTransport implements ApiTransport {
   _WebTransport({this.preview = false});
   final bool preview;
+  var cdnStatus = 200;
   final requestedQualities = <int>[];
 
   @override
@@ -160,6 +194,9 @@ final class _WebTransport implements ApiTransport {
     required Duration timeout,
     ApiCancellation? cancellation,
   }) async {
+    if (uri.host == 'cdn.example') {
+      return ApiHttpResponse(cdnStatus, Uint8List(0), const {});
+    }
     final Map<String, Object?> data = switch (uri.path) {
       '/x/web-interface/nav' => {
         'wbi_img': {
