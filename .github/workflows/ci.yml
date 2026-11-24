@@ -1,8 +1,8 @@
 name: CI
 
 on:
-  push:
-    branches: ['**', '!dependabot/**']
+  # push 不再触发 CI：推到分支会自动跑 Release preview（auto-release-preview.yml）
+  # 并产出安装包与发布草稿。CI 保留给 PR 与手动质量检查。
   pull_request:
   workflow_dispatch:
     inputs:

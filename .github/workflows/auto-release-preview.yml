@@ -1,0 +1,65 @@
+name: Auto release preview
+
+# push 到分支后自动分发 Release preview，直接产出安装包与发布草稿。
+# 质量检查改由 PR 与手动 CI 承担；版本号已存在于 tag 时跳过，避免重复构建后失败。
+on:
+  push:
+    branches: ['**', '!dependabot/**']
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: auto-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    name: Dispatch release preview
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Resolve version and check existing tag
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          version="$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -n1 | tr -d '[:space:]')"
+          if ! printf '%s' "$version" | grep -Eq '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\+(0|[1-9][0-9]*)$'; then
+            echo "::error::pubspec.yaml version '$version' is not x.y.z+N; bump it before pushing."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          tag="v$version"
+          count="$(gh api "repos/$REPO/git/matching-refs/tags/$tag" --jq 'length' 2>/dev/null || echo 0)"
+          if [ "${count:-0}" -gt 0 ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Release skipped::Tag $tag already exists on $REF_NAME. Bump pubspec.yaml version to build a new release preview."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Dispatch Release preview
+        if: steps.check.outputs.skip == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          REF_NAME: ${{ github.ref_name }}
+          VERSION: ${{ steps.check.outputs.version }}
+        run: |
+          set -euo pipefail
+          gh workflow run release.yml --repo "$REPO" --ref "$REF_NAME" \
+            -f version="$VERSION" \
+            -f reuse_ci_build=true \
+            -f enable_android=true \
+            -f enable_windows=true \
+            -f enable_macos=true \
+            -f enable_ios=true \
+            -f enable_linux=true
+          echo "::notice title=Release dispatched::BiliSail $VERSION preview for $REF_NAME."
