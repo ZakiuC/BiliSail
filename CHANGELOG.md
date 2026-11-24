@@ -3,6 +3,22 @@
 应用版本号只维护在根 `pubspec.yaml`（`x.y.z+N`），每个可构建的变更都会递增。
 更早版本见 [GitHub Releases](https://github.com/CKopoer/BiliSail/releases)。
 
+## 1.3.1+11
+
+### 诊断
+
+- `appPlayInfoResolved` 新增 `appAuthorized`：记录本次高画质 PlayView 请求是否真的携带 App 访问令牌
+  （只记布尔值，令牌本身不落日志）。
+
+### 背景
+
+用户确认同一账号在 BBZQ 里 4K 可以正常播放，说明服务端能签发可播的高画质地址；
+而 BiliSail 通过手机端身份拿到的 4K 地址返回 403。最可能的原因是这次请求没有带上有效 App 令牌：
+只有 Web Cookie 登录时 `accessToken` 为空，服务端虽按客户端能力返回条目，却按未登录拒绝实际取流。
+
+下一次日志可据此直接判定：`appAuthorized=false` 时需要重新用扫码完成 App 登录；
+若为 `true` 仍 403，则问题在取流授权而非身份，需要抓取官方客户端的 URL 特征继续比对。
+
 ## 1.3.1+10
 
 ### 修复

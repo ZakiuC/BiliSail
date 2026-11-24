@@ -58,6 +58,10 @@ final class AppPlayInfoSource implements AppPlayInfoProvider {
   final Future<void> Function() _invalidateIdentity;
   final ApiGrpcTransport? _playViewTransport;
 
+  /// Whether the current App identity carries an access token. Recorded as a
+  /// boolean only; the token itself never leaves the request path.
+  bool _authorized = false;
+
   @override
   Future<ApiPlayInfo> resolve({
     required String bvid,
@@ -69,6 +73,8 @@ final class AppPlayInfoSource implements AppPlayInfoProvider {
     required ApiRequestContext context,
   }) async {
     final identity = await _loadIdentity();
+    _authorized =
+        identity.accessToken != null && identity.accessToken!.isNotEmpty;
     final playViewTransport = _playViewTransport;
     if (playViewTransport != null) {
       ApiPlayInfo? hd;
@@ -218,6 +224,7 @@ final class AppPlayInfoSource implements AppPlayInfoProvider {
   }) {
     _requests.diagnostics?.record(
       CoreDiagnosticEvent.appPlayInfoResolved,
+      appAuthorized: _authorized,
       appProtocol: protocol,
       requestedQuality: quality,
       trialRequested: trial,
