@@ -13,7 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test(
-    '8K preference requests 127 and merges App video and audio ladders',
+    '8K preference uses the whole App source with App request headers',
     () async {
       final web = _WebTransport();
       final app = _AppProvider(_appInfo());
@@ -28,7 +28,9 @@ void main() {
 
       expect(web.requestedQualities, [127]);
       expect(app.qualities, [127]);
-      expect(media.qualities, [16, 32, 64, 80, 112, 120, 126]);
+      // The whole ladder comes from the App response; Web tracks stay apart
+      // because App URLs are rejected when a Web Referer is attached.
+      expect(media.qualities, [112, 120, 126]);
       expect(media.quality, 126);
       expect(media.video.codec, 'dvh1.05.06');
       expect(media.audioTracks.map((track) => track.quality), [
@@ -46,6 +48,10 @@ void main() {
         media.selectAudioQuality(AudioQualityPreference.dolby).audio?.codec,
         'ec-3',
       );
+      // App headers: BiliDroid UA and no Referer.
+      expect(media.headers.containsKey('Referer'), isFalse);
+      expect(media.headers['User-Agent'], contains('BiliDroid'));
+      expect(media.headers['User-Agent'], contains('build/9000100'));
     },
   );
 
@@ -77,6 +83,8 @@ void main() {
     expect(media.quality, 80);
     expect(media.qualities, [16, 32, 64, 80]);
     expect(media.audio, isNotNull);
+    // The Web source keeps Web headers.
+    expect(media.headers['Referer'], 'https://www.bilibili.com/');
   });
 
   test(
@@ -93,6 +101,9 @@ void main() {
       expect(app.qualities, [120]);
       expect(media.quality, 120);
       expect(media.audio, isNotNull);
+      // The App fallback source uses App headers without a Referer.
+      expect(media.headers.containsKey('Referer'), isFalse);
+      expect(media.headers['User-Agent'], contains('BiliDroid'));
     },
   );
 
@@ -130,6 +141,8 @@ void main() {
       expect(media.quality, 80);
       // Rejected App tiers are hidden so the menu never offers dead entries.
       expect(media.qualities, [16, 32, 64, 80]);
+      // The Web fallback restores Web headers.
+      expect(media.headers['Referer'], 'https://www.bilibili.com/');
     },
   );
 

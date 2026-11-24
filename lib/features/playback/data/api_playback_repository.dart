@@ -324,9 +324,13 @@ class ApiPlaybackRepository
         }
       }
     }
-    if (app != null && useApp && playSource == 'web') {
+    // CDN 请求头互斥（实测）：Web 签发的 URL 需要 Web Referer/UA，App 签发
+    // 的 URL 带 Referer 必被拒。因此高画质不能把 App 视频轨混进 Web 音轨，
+    // 而是像官方客户端那样整套使用 PlayView 的音视频与 App 请求头。
+    ApiPlayInfo? appInfo;
+    if (app != null && useApp && playSource == 'web' && voice.isOriginal) {
       try {
-        final supplement = await app.resolve(
+        final candidate = await app.resolve(
           bvid: video.value,
           cid: cid,
           quality: enhancements.unlockHighestBitrate ? 127 : quality,
@@ -335,9 +339,12 @@ class ApiPlaybackRepository
           unlimitedQualityTrial: enhancements.unlimitedQualityTrial,
           context: context,
         );
-        final merged = mergeApiPlayInfo(info, supplement);
-        if (!identical(merged, info)) playSource = 'merged';
-        info = merged;
+        if (!candidate.isPreview &&
+            candidate.dashVideo.isNotEmpty &&
+            candidate.dashAudio.isNotEmpty &&
+            candidate.dashVideo.any((track) => track.id > 80)) {
+          appInfo = candidate;
+        }
       } on ApiFailure catch (failure) {
         if (failure.category == ApiFailureCategory.cancelled) rethrow;
         // A complete Web response remains usable when optional App reads fail.
@@ -360,51 +367,61 @@ class ApiPlaybackRepository
         await audioQualityPreference?.call() ?? AudioQualityPreference.aac192;
     final avoidHdr = await avoidHdrPreference?.call() ?? false;
     final cdn = await cdnPreference?.call() ?? MediaCdnPreference.automatic;
-    const headers = {
+    const webHeaders = {
       'Referer': 'https://www.bilibili.com/',
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/132.0.0.0 Safari/537.36',
     };
+    const appHeaders = {
+      // PlayView 签发的视频 URL 要求 App UA，且带 Referer 会被 CDN 拒绝。
+      'User-Agent':
+          'Mozilla/5.0 BiliDroid/9.0.1 (bbcallen@gmail.com) os/android '
+          'model/phone mobi_app/android build/9000100 channel/master '
+          'innerVer/9000100 osVer/17 network/2',
+    };
+    final appWholeSource = appInfo ?? (playSource == 'app' ? info : null);
+    var fromApp = appWholeSource != null;
+    final source = appWholeSource ?? info;
     var media = selectDashMedia(
-      info,
+      source,
       audioQuality: audioQuality,
       quality: quality,
       preferredCodec: preferredCodec,
       unlockHighestBitrate: enhancements.unlockHighestBitrate,
       avoidHdrDolby: avoidHdr,
       cdnPreference: cdn,
-      headers: headers,
+      headers: fromApp ? appHeaders : webHeaders,
     );
-    // A returned high tier is not automatically playable: VIP-only DASH URLs
-    // answer 403 at the CDN. Probe once and fall back to 1080P instead of
-    // letting the player fail to open the source.
+    // A returned high tier is not automatically playable: a CDN refusal must
+    // degrade to 1080P instead of letting the player fail to open the source.
     var probeStatus = 0;
-    // Only App-sourced tiers can be entitlement-invalid; Web tracks are the
-    // long-standing path and must not gain an extra request.
-    if (media.quality > 80 && playSource != 'web') {
+    if (fromApp && media.quality > 80) {
       final status = await api.probeMediaStatus(
         media.video.urls.first,
-        headers: headers,
+        headers: appHeaders,
       );
       probeStatus = status ?? 0;
       // null means the probe itself was inconclusive; keep the higher tier.
       if (status != null && status != 200 && status != 206) {
+        // The whole App set shares one signature policy: fall back to the Web
+        // 1080P source rather than trying other App tiers.
+        final fallback = appInfo == null ? source : info;
         media = selectDashMedia(
-          info,
+          fallback,
           audioQuality: audioQuality,
           quality: 80,
           preferredCodec: preferredCodec,
           avoidHdrDolby: avoidHdr,
           cdnPreference: cdn,
-          headers: headers,
+          headers: appInfo == null ? appHeaders : webHeaders,
         );
-        // One rejected App tier means the account cannot fetch any of the
-        // higher ones either; hide them instead of offering dead entries.
+        fromApp = appInfo == null;
         media = media.restrictQualities([
           for (final option in media.qualities)
             if (option <= 80) option,
         ]);
       }
     }
+    playSource = fromApp ? 'app' : 'web';
     requests.diagnostics?.record(
       CoreDiagnosticEvent.playInfoResolved,
       playSource: playSource,

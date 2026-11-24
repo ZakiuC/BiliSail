@@ -3,6 +3,20 @@
 应用版本号只维护在根 `pubspec.yaml`（`x.y.z+N`），每个可构建的变更都会递增。
 更早版本见 [GitHub Releases](https://github.com/CKopoer/BiliSail/releases)。
 
+## 1.3.1+14
+
+### 修复
+
+- **找到高画质 403 的根因并完整修复：B 站 CDN 对两种来源的请求头要求互斥。**
+  在线实测（同一 URL、仅换请求头）：
+  - PlayView 签发的视频 URL：App UA 无 Referer → **302/有效**；带 Web Referer → **403**
+  - Web playurl 签发的 URL：Web Referer+UA → **206**；App UA → **403**
+  - 此前播放器统一使用 Web Referer，因此 App 高画质地址必然 403——与账号授权无关。
+- 高画质不再把 App 视频轨混进 Web 音轨（播放器要求音视频分轨请求头一致，混源必挂），
+  改为像官方客户端一样**整套切换**：选中高档时音频也用 PlayView 返回的轨道。
+- 请求头按整套来源选择：App 源用 BiliDroid UA 且不带 Referer，Web 源保持原有 Web 头。
+- 探测同样使用与播放一致的 App 头，避免误判；被拒时整套回落 Web 1080P 并隐藏死档。
+
 ## 1.3.1+13
 
 ### 修复
