@@ -9,12 +9,54 @@ import '../app_profile.dart';
 import '../models.dart';
 import '../transport.dart';
 
+/// Client identity carried by the binary metadata headers.
+///
+/// The server clamps the returned DASH ladder to what it believes the client
+/// supports, so a legacy HD profile can be limited to 1080P even when the video
+/// and account have 4K/Dolby tiers. Profiles only change announced device facts.
+final class AppPlayViewProfile {
+  const AppPlayViewProfile({
+    required this.mobiApp,
+    required this.device,
+    required this.build,
+    required this.versionName,
+  });
+
+  /// Current default: HD (tablet) profile used by the rest of the App channel.
+  static const androidHd = AppPlayViewProfile(
+    mobiApp: 'android_hd',
+    device: 'android',
+    build: 2001100,
+    versionName: '2.0.1',
+  );
+
+  /// Phone profile, for playurl reads that the HD profile caps at 1080P.
+  static const phone = AppPlayViewProfile(
+    mobiApp: 'android',
+    device: 'phone',
+    build: 9000100,
+    versionName: '9.0.1',
+  );
+
+  final String mobiApp;
+  final String device;
+  final int build;
+  final String versionName;
+
+  String get key => '$mobiApp/$build';
+}
+
 /// Official App PlayViewUnite playback over a single uncompressed gRPC frame.
 /// Web cookies are never read or copied into this App-only channel.
 final class AppPlayViewClient {
-  AppPlayViewClient(this.api, {ApiGrpcTransport? transport})
-    : _transport = transport ?? DioApiTransport(),
-      _ownsTransport = transport == null;
+  AppPlayViewClient(
+    this.api, {
+    ApiGrpcTransport? transport,
+    this.profile = AppPlayViewProfile.androidHd,
+  }) : _transport = transport ?? DioApiTransport(),
+       _ownsTransport = transport == null;
+
+  final AppPlayViewProfile profile;
 
   final BiliApiClient api;
   final ApiGrpcTransport _transport;
@@ -173,24 +215,23 @@ final class AppPlayViewClient {
     final token = accessToken == null || accessToken.isEmpty
         ? null
         : accessToken;
-    final build = int.parse(AppProfile.build);
     final deviceMessage = _WireWriter()
       ..varintField(1, 5)
-      ..varintField(2, build)
+      ..varintField(2, profile.build)
       ..stringField(3, buvid)
-      ..stringField(4, AppProfile.mobiApp)
+      ..stringField(4, profile.mobiApp)
       ..stringField(5, 'android')
-      ..stringField(6, 'android')
+      ..stringField(6, profile.device)
       ..stringField(7, 'master')
       ..stringField(8, 'android')
       ..stringField(9, device.model)
       ..stringField(10, device.osVersion)
-      ..stringField(13, '2.0.1');
+      ..stringField(13, profile.versionName);
     final metadata = _WireWriter()
       ..stringField(1, token ?? '')
-      ..stringField(2, AppProfile.mobiApp)
-      ..stringField(3, 'android')
-      ..varintField(4, build)
+      ..stringField(2, profile.mobiApp)
+      ..stringField(3, profile.device)
+      ..varintField(4, profile.build)
       ..stringField(5, 'master')
       ..stringField(6, buvid)
       ..stringField(7, 'android');
@@ -206,7 +247,7 @@ final class AppPlayViewClient {
       ..messageField(2, localeIds)
       ..stringField(4, 'Asia/Shanghai');
     final fawkes = _WireWriter()
-      ..stringField(1, AppProfile.mobiApp)
+      ..stringField(1, profile.mobiApp)
       ..stringField(2, 'prod')
       ..stringField(3, _fawkesSession);
     String binary(_WireWriter writer) => base64Encode(writer.bytes);
@@ -215,8 +256,13 @@ final class AppPlayViewClient {
       'grpc-encoding': 'identity',
       'grpc-accept-encoding': 'gzip,identity',
       'gzip-accept-encoding': 'gzip,identity',
-      'user-agent': AppProfile.userAgentFor(device),
+      'user-agent': _userAgent(device),
       'buvid': buvid,
+      'x-bili-trace-id': '${_randomHex(16)}:${_randomHex(8)}:0:0',
+      'x-bili-exps-bin': '',
+      'x-bili-aurora-zone': '',
+      'x-bili-gaia-vtoken': '',
+      'bili-http-engine': 'cronet',
       if (token != null) 'authorization': 'identify_v1 $token',
       'x-bili-device-bin': binary(deviceMessage),
       'x-bili-metadata-bin': binary(metadata),
@@ -225,6 +271,17 @@ final class AppPlayViewClient {
       'x-bili-fawkes-req-bin': binary(fawkes),
     };
   }
+
+  /// Declares the same client the metadata headers and User-Agent describe.
+  String _userAgent(AppDeviceInfo device) =>
+      'Mozilla/5.0 BiliDroid/${profile.versionName} (bbcallen@gmail.com) os/android '
+      'model/${device.model} mobi_app/${profile.mobiApp} build/${profile.build} '
+      'channel/master innerVer/${profile.build} osVer/${device.osVersion} '
+      'network/${switch (device.network) {
+        'mobile' => '1',
+        'wifi' => '2',
+        _ => '0',
+      }}';
 
   static Uint8List _localeIds() =>
       (_WireWriter()

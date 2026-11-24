@@ -3,6 +3,26 @@
 应用版本号只维护在根 `pubspec.yaml`（`x.y.z+N`），每个可构建的变更都会递增。
 更早版本见 [GitHub Releases](https://github.com/CKopoer/BiliSail/releases)。
 
+## 1.3.1+9
+
+### 修复
+
+- **高画质第二次定位：PlayView 通了，但服务端按客户端身份限档。**
+  1.3.1+8 的诊断显示 `appProtocol=playview`、`outcome=success`、`requestedQuality=127`、
+  `trialRequested=true`，但服务端只返回 `80/64/32/16` 四档，说明请求格式已正确，
+  限制来自它认定的客户端能力。
+- 新增可切换的客户端身份：先用现有 HD（`android_hd`／build 2001100，2.0.1）请求，
+  若最高档仍不超过 1080P，再用手机端身份（`android`／build 9000100，9.0.1）重试并合并结果。
+  两种身份都只改变公开设备声明，使用同一账号令牌。
+- 补齐官方 gRPC 公共元数据头：`x-bili-trace-id`、`x-bili-exps-bin`、
+  `x-bili-aurora-zone`、`x-bili-gaia-vtoken`、`bili-http-engine`，User-Agent 与所选身份保持一致。
+- 诊断新增 `playview_phone` 来源，便于区分两次尝试各自返回的档位。
+
+### 未验证
+
+- 尚未确认服务端是否因手机端身份放开 4K／杜比／8K；下次日志的 `appPlayInfoResolved`
+  会分别记录 `playview` 与 `playview_phone` 的实际档位。
+
 ## 1.3.1+8
 
 ### 修复

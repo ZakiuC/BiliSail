@@ -110,7 +110,9 @@ final class CoreDiagnosticLog {
       const {'web', 'app', 'merged'}.contains(playSource) ? playSource : null;
 
   static String? _safeAppProtocol(String? protocol) =>
-      const {'playview', 'json'}.contains(protocol) ? protocol : null;
+      const {'playview', 'playview_phone', 'json'}.contains(protocol)
+      ? protocol
+      : null;
 
   static String _safeType(Object error) {
     final type = error.runtimeType.toString();

@@ -2,6 +2,7 @@ import 'package:bili_api/bili_api.dart';
 
 import '../../../core/logging/core_diagnostic_log.dart';
 import '../../../core/network/api_requests.dart';
+import 'play_info_merge.dart';
 
 typedef AppPlayurlIdentity = ({
   String buvid,
@@ -70,25 +71,21 @@ final class AppPlayInfoSource implements AppPlayInfoProvider {
     final identity = await _loadIdentity();
     final playViewTransport = _playViewTransport;
     if (playViewTransport != null) {
+      ApiPlayInfo? hd;
       try {
-        final result =
-            await AppPlayViewClient(
-              _api,
-              transport: playViewTransport,
-            ).getPlayInfo(
-              bvid,
-              cid,
-              qn: quality,
-              language: language,
-              productionType: productionType,
-              unlimitedQualityTrial: unlimitedQualityTrial,
-              buvid: identity.buvid,
-              accessToken: identity.accessToken,
-              context: context,
-            );
-        _checkIdentity(identity, context);
-        _recordProtocol('playview', result, quality, unlimitedQualityTrial);
-        return result;
+        hd = await _playView(
+          playViewTransport,
+          AppPlayViewProfile.androidHd,
+          identity: identity,
+          bvid: bvid,
+          cid: cid,
+          quality: quality,
+          language: language,
+          productionType: productionType,
+          trial: unlimitedQualityTrial,
+          context: context,
+        );
+        _recordProtocol('playview', hd, quality, unlimitedQualityTrial);
       } on ApiFailure catch (error) {
         _recordProtocol(
           'playview',
@@ -99,8 +96,44 @@ final class AppPlayInfoSource implements AppPlayInfoProvider {
           error: error,
         );
         if (error.category == ApiFailureCategory.cancelled) rethrow;
-        // Keep the older JSON endpoint as a compatibility fallback.
       }
+      // The HD profile is capped at 1080P for some videos; retry as the phone
+      // client before falling back to the legacy JSON endpoint.
+      if (hd == null || _highestQuality(hd) <= 80) {
+        try {
+          final phone = await _playView(
+            playViewTransport,
+            AppPlayViewProfile.phone,
+            identity: identity,
+            bvid: bvid,
+            cid: cid,
+            quality: quality,
+            language: language,
+            productionType: productionType,
+            trial: unlimitedQualityTrial,
+            context: context,
+          );
+          _recordProtocol(
+            'playview_phone',
+            phone,
+            quality,
+            unlimitedQualityTrial,
+          );
+          final merged = hd == null ? phone : mergeApiPlayInfo(hd, phone);
+          if (hd == null || !identical(merged, hd)) return merged;
+        } on ApiFailure catch (error) {
+          _recordProtocol(
+            'playview_phone',
+            null,
+            quality,
+            unlimitedQualityTrial,
+            outcome: CoreDiagnosticOutcome.failed,
+            error: error,
+          );
+          if (error.category == ApiFailureCategory.cancelled) rethrow;
+        }
+      }
+      if (hd != null) return hd;
     }
     try {
       final result = await AppPlaybackClient(_api).getPlayInfo(
@@ -137,6 +170,43 @@ final class AppPlayInfoSource implements AppPlayInfoProvider {
       rethrow;
     }
   }
+
+  Future<ApiPlayInfo> _playView(
+    ApiGrpcTransport transport,
+    AppPlayViewProfile profile, {
+    required AppPlayurlIdentity identity,
+    required String bvid,
+    required String cid,
+    required int quality,
+    required String language,
+    required int productionType,
+    required bool trial,
+    required ApiRequestContext context,
+  }) async {
+    final info =
+        await AppPlayViewClient(
+          _api,
+          transport: transport,
+          profile: profile,
+        ).getPlayInfo(
+          bvid,
+          cid,
+          qn: quality,
+          language: language,
+          productionType: productionType,
+          unlimitedQualityTrial: trial,
+          buvid: identity.buvid,
+          accessToken: identity.accessToken,
+          context: context,
+        );
+    _checkIdentity(identity, context);
+    return info;
+  }
+
+  static int _highestQuality(ApiPlayInfo info) => info.dashVideo.fold<int>(
+    0,
+    (best, track) => track.id > best ? track.id : best,
+  );
 
   void _recordProtocol(
     String protocol,

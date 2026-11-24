@@ -61,6 +61,41 @@ void main() {
     },
   );
 
+  test(
+    'profile switches the announced client in metadata and User-Agent',
+    () async {
+      Future<Map<String, String>> headersFor(AppPlayViewProfile profile) async {
+        final transport = _GrpcTransport(_frame(_replyBytes()));
+        await AppPlayViewClient(
+          _api(),
+          transport: transport,
+          profile: profile,
+        ).getPlayInfo(_bvid, _cid, buvid: _buvid);
+        return transport.requests.single.headers;
+      }
+
+      final hd = await headersFor(AppPlayViewProfile.androidHd);
+      final hdMetadata = latin1.decode(
+        base64Decode(hd['x-bili-metadata-bin']!),
+      );
+      expect(hdMetadata, contains('android_hd'));
+      expect(hd['user-agent'], contains('mobi_app/android_hd build/2001100'));
+
+      final phone = await headersFor(AppPlayViewProfile.phone);
+      final phoneMetadata = latin1.decode(
+        base64Decode(phone['x-bili-metadata-bin']!),
+      );
+      final phoneDevice = latin1.decode(
+        base64Decode(phone['x-bili-device-bin']!),
+      );
+      expect(phoneMetadata, isNot(contains('android_hd')));
+      expect(phoneMetadata, contains('android'));
+      expect(phoneDevice, contains('phone'));
+      expect(phone['user-agent'], contains('mobi_app/android build/9000100'));
+      expect(phone['content-type'], 'application/grpc');
+    },
+  );
+
   test('compressed gRPC messages decode within the size cap', () async {
     final compressed = gzip.encode(_replyBytes());
     final body = Uint8List(compressed.length + 5)
