@@ -13,7 +13,7 @@
   <a href="https://github.com/ZakiuC/BiliSail/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/ZakiuC/BiliSail/ci.yml?label=CI" alt="CI 状态"></a>
   <a href="pubspec.yaml"><img src="https://img.shields.io/badge/dynamic/yaml?url=https%3A%2F%2Fraw.githubusercontent.com%2FZakiuC%2FBiliSail%2Fmaster%2Fpubspec.yaml&amp;query=%24.version&amp;label=version&amp;color=fb7299" alt="源码版本（pubspec.yaml）"></a>
   <a href="https://github.com/ZakiuC/BiliSail/releases"><img src="https://img.shields.io/github/v/release/ZakiuC/BiliSail?include_prereleases&amp;sort=date&amp;label=release&amp;color=fb7299" alt="最新公开发布版本（含预发布）"></a>
-  <a href="docs/validation/ci-cd.md"><img src="https://img.shields.io/badge/Flutter-3.50.1-02569B?logo=flutter&amp;logoColor=white" alt="Flutter 3.50.1"></a>
+  <a href="docs/validation/ci-cd.md"><img src="https://img.shields.io/badge/Flutter-main-02569B?logo=flutter&amp;logoColor=white" alt="Flutter main"></a>
   <a href="https://github.com/ZakiuC/BiliSail/stargazers"><img src="https://img.shields.io/github/stars/ZakiuC/BiliSail?style=flat" alt="GitHub Stars"></a>
   <a href="https://github.com/ZakiuC/BiliSail/forks"><img src="https://img.shields.io/github/forks/ZakiuC/BiliSail?style=flat" alt="GitHub Forks"></a>
 </p>
@@ -27,7 +27,7 @@
 
 ---
 
-BiliSail（哔帆）以视频、影视和直播观看为核心，提供双／多标签浏览、原生播放、弹幕、云端观看历史与本地续播，以及下载队列和离线播放。晴湾界面采用桌面分组侧栏与窄屏四项底部导航，结合自适应网格、视频卡片悬停预览、播放详情分栏和可配置快捷键。
+BiliSail（哔帆）支持视频、影视、直播和课程播放，提供双／多标签浏览、原生播放、弹幕、云端观看历史与本地续播，以及下载队列和离线播放。晴湾界面采用桌面分组侧栏与窄屏四项底部导航，结合自适应网格、视频卡片悬停预览、播放详情分栏和可配置快捷键。
 
 本仓库是 [CKopoer/BiliSail](https://github.com/CKopoer/BiliSail) 的增强分支：在保持上游架构与约定不变的前提下，接入官方 App `PlayViewUnite` 协议，使非会员账号也能通过试用机制取得 4K／1080P 高码率流（已在 Android 实机验证 4K AV1 硬解播放）。
 
@@ -44,7 +44,7 @@ BiliSail（哔帆）以视频、影视和直播观看为核心，提供双／多
 
 ## 使用声明
 
-本应用是哔哩哔哩第三方客户端，视频、影视、直播及相关内容均来自哔哩哔哩，与官方无隶属关系。
+本应用是哔哩哔哩第三方客户端，视频、影视、直播、课程及相关内容均来自哔哩哔哩，与官方无隶属关系。
 
 本程序仅供学习交流与编程技术研究使用。
 
@@ -81,6 +81,7 @@ BiliSail（哔帆）以视频、影视和直播观看为核心，提供双／多
 | 评论与动态互动 | 最热／最新评论、楼中楼、表情与图片、作者装扮、服务端提供的 IP 属地、正文链接与时间点跳转；视频点赞／投币／收藏，动态点赞、评论、复制链接与转发 |
 | 导航与界面 | 单／双／多标签模式与 Android 默认单标签、Windows／macOS 双标签独立播放窗口及媒体返回历史、Android 应用内双标签、多标签可选并发播放、桌面侧栏与窄屏首页／动态／我的／设置、我的页历史／稍后再看／收藏／下载内容标签、分类横向滚轮、紧凑播放布局、桌面平滑滚动、键盘与鼠标侧键配置、图片缓存 |
 | 历史与续播 | 当前账号云端观看历史分页；登录点播上报云端进度，记住进度开启时本地优先、云端补充；新点播继承本次运行中最近选择的倍速 |
+| 课程 | 在搜索框粘贴课程链接，或从动态和观看历史进入。课程页展示讲师、课时目录和试看状态，支持分章选课、连续播放、课时评论和本地续播 |
 | 下载与离线 | 分 P／剧集多选、画质与编码、队列暂停/继续/重试、断点和重启恢复、文件校验；本地音视频分轨、弹幕与字幕播放 |
 | 个性化 | 明暗主题、内置／系统字体、播放、弹幕、字幕和下载设置；手动及每日首次启动更新检查；可选空降助手，默认关闭 |
 
@@ -96,7 +97,7 @@ BiliSail（哔帆）以视频、影视和直播观看为核心，提供双／多
 | Android | arm64 / Android 7.0（API 24）及以上 | 本地与 CI 构建 APK 通过，固定 release 签名与单 arm64 ABI 校验通过；真机运行、播放、离线下载和覆盖升级待验 |
 | macOS | arm64、Intel x64 / macOS 13.0 及以上 | CI 的 arm64 构建、架构校验和 DMG 打包通过；已加入 Intel x64 构建配置，首次远端构建待验；设备启动、原生播放、安装及 Gatekeeper 验收待验 |
 | iOS | arm64 / iOS 15.0 及以上 | 已接入工程及 CI 未签名 IPA；首次远端构建、签名安装、账号与播放实机验收待完成 |
-| Linux | x64 / AppImage 基线 Ubuntu 24.04；Flatpak Freedesktop 25.08 | 已接入 GTK 工程及 CI Flatpak／AppImage；首次远端构建及桌面运行待验；使用 X11／XWayland、扫码登录，详见[平台扩展记录](docs/validation/ios-linux.md) |
+| Linux | x64 / AppImage 基线 Ubuntu 24.04；Flatpak Freedesktop 25.08 | GTK 客户端支持扫码登录，CI 生成 AppImage 和 Flatpak。新构建优先使用原生 Wayland，兼容 X11 桌面。版本差异及缩放验证见[平台扩展记录](docs/validation/ios-linux.md#linux)。 |
 
 
 ## 下载与安装
@@ -127,7 +128,7 @@ CI 和 Release 构建的 Windows 产物同时包含 `.msix`、`.msi` 和 `.exe` 
 
 ### 环境要求
 
-项目固定使用 **Flutter 3.50.1 stable / Dart 3.14.0**。直接依赖采用精确版本，根应用和各包均保留锁文件。
+项目使用 **Flutter main**。仓库根的 `.flutter-version` 固定完整 Git 提交，Dart 随该 SDK 安装。直接依赖采用精确版本，根应用和各包均保留锁文件。
 
 Windows 开发还需安装 **Visual Studio 2022** 的“使用 C++ 的桌面开发”工作负载及 Windows SDK，并将 NuGet CLI 加入 `PATH`（内嵌网页插件构建使用）。Windows 人机验证及官网登录需要 WebView2 Runtime；密码／短信流程与验证边界见[App 登录记录](docs/validation/password-sms-app-login-2026-11-15.md)。Android 和 macOS 的构建需各自的工具链，macOS 构建需在 macOS 主机上执行。Linux 构建需 WebKitGTK 4.1 开发包；网页登录与安装包运行依赖见[WebView 平台记录](docs/validation/webview-all-linux-2026-11-14.md)。
 
@@ -140,12 +141,16 @@ Windows 开发还需安装 **Visual Studio 2022** 的“使用 C++ 的桌面开�
 ```powershell
 git clone https://github.com/ZakiuC/BiliSail.git
 cd BiliSail
+$revision = (Get-Content .flutter-version -Raw).Trim()
+.\tool\setup-flutter-main.ps1 -Destination (Join-Path $env:LOCALAPPDATA "BiliSailSDK/flutter-$revision")
 flutter pub get
 .\tool\build-download-mux.ps1 -Target windows-x64
 flutter run -d windows
 ```
 
 ### Windows Release 构建
+
+在已执行上述 SDK 安装脚本的同一个 PowerShell 会话运行。
 
 ```powershell
 .\tool\build-download-mux.ps1 -Target windows-x64
@@ -165,7 +170,7 @@ flutter build windows --release
 
 首页、动态、直播、我的、消息、下载、设置属于同一固定根标签，一级切换不另开标签，各自保留列表与筛选。“我的”以紧凑资料区展示等级、经验、硬币及关注/粉丝/动态，直接分标签显示历史、稍后再看、收藏和下载；桌面直播直接显示推荐直播、我的关注、观看记录。首页、动态和直播保留头像与搜索，头像仍打开账号抽屉；动态首次进入默认视频动态，之后保留本次选择。设置只保留分类与设置内容。
 
-播放统一使用 media_kit，保留硬件／软件解码及 Android 视频输出设置。旧版保存的已删除或未识别后端自动按 media_kit 加载，其余设置保持；后续成功保存写回规范值。清理范围与验证边界见[播放后端清理](docs/validation/fvp-removal-2026-11-12.md)。
+常规播放使用 media_kit，支持硬件／软件解码及 Android 视频输出设置。在「音质」选用杜比音频后，Windows 可将 Dolby Digital Plus 全景声透传给兼容的 HDMI 接收端，播放器需设为 100% 音量、1 倍速和 0 dB 增益。Android 10 及以上可自动为含 JOC 的音轨选择系统杜比解码器。「播放信息」显示实际音轨、解码器和音频输出格式。设备验收及其余平台的进度见[杜比全景声播放方案](docs/dolby-atmos-playback.md)。旧版播放后端设置的兼容见[播放后端清理](docs/validation/fvp-removal-2026-11-12.md)。
 
 ### 常用快捷键
 

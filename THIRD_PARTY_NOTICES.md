@@ -6,6 +6,12 @@
 
 只读核对 GPLv3 的 [PiliPlus 217fb54](https://github.com/bggRGjQaUbCoE/PiliPlus/commit/217fb54)，确认 Dio `application/grpc` 单帧传输与公开 metadata 的兼容性；BiliSail 的帧、编解码、错误分类、取消和会话隔离均独立实现，未复制 PiliPlus 应用源码、生成物、资源或账号数据。
 
+Android 的杜比音轨使用 Google AndroidX Media3 ExoPlayer 1.9.2（Apache License 2.0）调用系统媒体组件。播放所需的杜比解码器由设备提供。[AndroidX Media3 源码和许可](https://github.com/androidx/media/tree/1.9.2)
+
+## 2026-11-23 播放组件
+
+当前使用 MIT 许可的 Predidit/media-kit 基线，CKopoer 分支更新 Windows 两个目标的 Native Assets 归档，应用在构建副本中应用设备生命周期修复。Windows 分发目录随附对应版本的构建配置、源码标识和子依赖声明。下文的旧 SDK 构建选项和许可描述对应各自日期的历史二进制。[固定资产清单](https://github.com/CKopoer/media-kit/blob/3493e859fe70dff908ba2fb4070162962f449ef2/media_kit/hook/native_bundles.json) · [Windows 归档与构建来源](windows/native/PREDIDIT_SOURCE.md)
+
 ## 2026-11-20 专栏正文解析
 
 [html 0.15.7](https://pub.dev/packages/html/versions/0.15.7) 用于在 Dart 中解析旧版专栏的 HTML 正文。该包按 MIT 许可分发，传递依赖 [csslib 1.0.2](https://pub.dev/packages/csslib/versions/1.0.2) 使用 BSD-3-Clause。两者均为纯 Dart，包内原始 LICENSE 由 Flutter notices 收集。

@@ -196,8 +196,10 @@ try {
   $sdkJson = & flutter --version --machine
   if ($LASTEXITCODE -ne 0) { throw 'Could not read Flutter SDK version.' }
   $sdk = $sdkJson | ConvertFrom-Json
-  $flutterVersion = (Get-Content -LiteralPath (Join-Path $repoRoot '.flutter-version') -Raw).Trim()
-  if ($sdk.frameworkVersion -ne $flutterVersion) { throw "This checkout is verified with Flutter $flutterVersion." }
+  $flutterRevision = (Get-Content -LiteralPath (Join-Path $repoRoot '.flutter-version') -Raw).Trim()
+  if ($sdk.channel -cne 'main' -or $sdk.frameworkRevision -cne $flutterRevision) {
+    throw "This checkout requires Flutter main at $flutterRevision. Found $($sdk.channel) at $($sdk.frameworkRevision)."
+  }
   if ($isWindowsTarget) {
     $flutterRoot = Split-Path (Split-Path (Get-Command flutter).Source -Parent) -Parent
     $dartBinary = Join-Path $flutterRoot 'bin/cache/dart-sdk/bin/dart.exe'
@@ -227,11 +229,14 @@ try {
     $runtime = Get-ChildItem "$visualStudio/VC/Redist/MSVC/*/$windowsArch/Microsoft.VC*.CRT" -Directory | Sort-Object FullName -Descending | Select-Object -First 1
     if (!$runtime) { throw "Visual C++ $windowsArch redistributable DLLs were not found." }
     $windowsRuntimeFiles = @(Get-WindowsRuntimeFiles $runtime.FullName $windowsArch)
+    if ($Target -eq 'windows-x64') {
+      $cmake = Join-Path $visualStudio 'Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe'
+      Invoke-BuildStage 'Windows media assets' {
+        & (Join-Path $PSScriptRoot 'prepare-windows-media-assets.ps1') -CMake $cmake
+      }
+    }
   }
   Invoke-BuildStage 'SQLite assets' { Invoke-BuildCommand python @((Join-Path $PSScriptRoot 'prepare-sqlite-assets.py'), '--target', $Target) }
-  if ($isWindowsTarget) {
-    Invoke-BuildStage 'Windows media assets' { & (Join-Path $PSScriptRoot 'prepare-windows-media-assets.ps1') -Architecture $windowsArch }
-  }
   Invoke-BuildStage 'Mux component preparation' { & (Join-Path $PSScriptRoot 'build-download-mux.ps1') -Target $Target }
   # Release builds must regenerate native registrants without dev-only plugins.
   # Flutter's --no-pub also skips that regeneration.
@@ -411,6 +416,7 @@ try {
     sourceDirty = $sourceDirty
     androidVersionCode = $androidVersionCode
     androidSigningCertificateSha256 = $androidCertificateSha256
+    flutterChannel = $sdk.channel
     flutterVersion = $sdk.frameworkVersion
     flutterRevision = $sdk.frameworkRevision
     engineRevision = $sdk.engineRevision

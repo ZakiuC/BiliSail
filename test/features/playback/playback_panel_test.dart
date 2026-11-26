@@ -661,10 +661,21 @@ void main() {
         );
         await _pumpFrames(tester);
         expect(back.hitTestable(), findsNothing);
+        await tester.dragFrom(const Offset(5, 150), const Offset(500, 0));
+        await _pumpFrames(tester);
+        expect(find.text('iOS modal'), findsOneWidget);
         Navigator.of(fullScreenContext).pop();
         await _pumpFrames(tester);
         expect(window.fullScreen, isTrue);
-        await tester.tap(back);
+        if (mode == WorkspaceNavigationMode.singlePage) {
+          await tester.tap(back);
+        } else {
+          await tester.flingFrom(
+            const Offset(5, 150),
+            const Offset(120, 0),
+            950,
+          );
+        }
         await _pumpFrames(tester);
         expect(window.fullScreen, isFalse);
         expect(
@@ -4763,7 +4774,7 @@ void main() {
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
   }
 
-  testWidgets('portrait browse lock still allows physical player rotation', (
+  testWidgets('iOS physical rotation under portrait browse lock', (
     tester,
   ) async {
     tester.view.devicePixelRatio = 1;
@@ -4787,11 +4798,19 @@ void main() {
         null,
       ),
     );
-    final events = StreamController<FullScreenOrientation>.broadcast(
-      sync: true,
+    MockStreamHandlerEventSink? events;
+    tester.binding.defaultBinaryMessenger.setMockStreamHandler(
+      const EventChannel('bilisail/device_orientation'),
+      MockStreamHandler.inline(
+        onListen: (_, sink) {
+          events = sink;
+        },
+        onCancel: (_) {
+          events = null;
+        },
+      ),
     );
-    addTearDown(events.close);
-    final window = _MobileWindowService(orientationEvents: events.stream);
+    final window = _MobileWindowService.platform();
     await window.updateDisplaySize(const Size(400, 800));
     final engine = _FakeEngine();
     final session = _session(engine);
@@ -4807,10 +4826,10 @@ void main() {
       ),
     );
     await _pumpFrames(tester);
-    expect(events.hasListener, isTrue);
+    expect(events, isNotNull);
     final opens = engine.opens;
-    events.add(FullScreenOrientation.portrait);
-    events.add(FullScreenOrientation.landscape);
+    events!.success('portrait');
+    events!.success('landscape');
     await _pumpFrames(tester);
     expect(window.isFullScreen, isTrue);
     expect(orientations.last, [
@@ -4821,7 +4840,7 @@ void main() {
     // forced by the player. The physical posture owns this transition.
     tester.view.physicalSize = const Size(800, 400);
     await _pumpFrames(tester);
-    events.add(FullScreenOrientation.portrait);
+    events!.success('portrait');
     await _pumpFrames(tester);
     expect(window.isFullScreen, isFalse);
     expect(orientations.last, ['DeviceOrientation.portraitUp']);
@@ -4831,9 +4850,9 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     await _pumpFrames(tester);
     await window.clearDisplayOrientationPolicy();
-    expect(events.hasListener, isFalse);
+    expect(events, isNull);
     expect(tester.takeException(), isNull);
-  });
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   for (final fullscreen in [false, true]) {
     testWidgets(
@@ -5804,6 +5823,36 @@ void main() {
         final secondSession = sessions.last;
         expect(secondSession.detail?.summary.id, second.summary.id);
         expect(secondSession.snapshots.value.phase, PlaybackPhase.playing);
+        final muteButton = findMaterialTooltip('将标签页静音');
+        final unmuteButton = findMaterialTooltip('取消标签页静音');
+        if (mode == WorkspaceNavigationMode.multipleTabs) {
+          expect(muteButton, findsNWidgets(concurrent ? 2 : 1));
+          if (concurrent) {
+            final activeRoute = router.routeInformationProvider.value.uri;
+            final secondVolume = secondSession.commandVolume;
+            await firstSession.setVolume(37);
+            await tester.tap(muteButton.first);
+            await _pumpFrames(tester);
+            expect(firstSession.snapshots.value.volume, 0);
+            expect(firstSession.snapshots.value.phase, PlaybackPhase.playing);
+            expect(secondSession.commandVolume, secondVolume);
+            expect(muteButton, findsOneWidget);
+            expect(unmuteButton, findsOneWidget);
+            await firstSession.pause();
+            await _pumpFrames(tester);
+            expect(unmuteButton, findsNothing);
+            await firstSession.togglePlaying();
+            await _pumpFrames(tester);
+            await tester.tap(unmuteButton);
+            await _pumpFrames(tester);
+            expect(firstSession.snapshots.value.volume, 37);
+            expect(muteButton, findsNWidgets(2));
+            expect(router.routeInformationProvider.value.uri, activeRoute);
+            expect(manager.selectedSession, same(secondSession));
+          }
+        } else {
+          expect(muteButton, findsNothing);
+        }
         expect(
           firstSession.snapshots.value.phase,
           mode == WorkspaceNavigationMode.multipleTabs && concurrent
@@ -5906,6 +5955,14 @@ void main() {
         await _pumpFrames(tester);
         expect(secondSession.snapshots.value.phase, PlaybackPhase.playing);
         expect(firstSession.media, isNull);
+        expect(muteButton, findsOneWidget);
+        final remainingEngine = secondSession.engine as _FakeEngine;
+        remainingEngine._emit(
+          remainingEngine.currentSnapshot.copyWith(phase: PlaybackPhase.ended),
+        );
+        await _pumpFrames(tester);
+        expect(muteButton, findsNothing);
+        expect(unmuteButton, findsNothing);
         await tester.pumpWidget(const SizedBox());
         await _pumpFrames(tester);
         final closing = manager.close();
@@ -11583,11 +11640,13 @@ class _FakeWindowService extends WindowService {
 }
 
 final class _MobileWindowService extends WindowService {
-  _MobileWindowService({this.orientationEvents = const Stream.empty()});
-  final Stream<FullScreenOrientation?> orientationEvents;
+  _MobileWindowService() : _orientationEvents = const Stream.empty();
+  _MobileWindowService.platform() : _orientationEvents = null;
+  final Stream<FullScreenOrientation?>? _orientationEvents;
 
   @override
-  Stream<FullScreenOrientation?> get deviceOrientations => orientationEvents;
+  Stream<FullScreenOrientation?> get deviceOrientations =>
+      _orientationEvents ?? super.deviceOrientations;
 
   @override
   bool get hasDesktopWindow => false;
@@ -12006,6 +12065,8 @@ final class _DelayedWindow extends WindowService {
   final orientations = <FullScreenOrientation?>[];
   @override
   bool get hasDesktopWindow => desktop;
+  @override
+  Stream<FullScreenOrientation?> get deviceOrientations => const Stream.empty();
   @override
   bool get keepsBrowsePortrait => keepPortrait;
   @override

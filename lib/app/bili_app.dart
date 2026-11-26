@@ -49,8 +49,10 @@ import '../shared/ui/smooth_scroll_behavior.dart';
 import '../core/presentation/app_input_host.dart';
 import '../core/presentation/android_system_ui.dart';
 import '../core/presentation/window_orientation_host.dart';
+import '../features/feed/application/recommendation_reporter.dart';
 import 'shortcut_coordinator.dart';
 import 'image_cache_binding.dart';
+import 'interface_scale.dart';
 import 'dependencies.dart';
 import 'router.dart';
 import 'theme.dart';
@@ -60,9 +62,11 @@ class BiliApp extends ConsumerStatefulWidget {
   const BiliApp({
     super.key,
     required this.dependencies,
+    this.automaticInterfaceScale = 1,
     this.videoComposition = const FlutterVideoCompositionAdapter(),
   });
   final AppDependencies dependencies;
+  final double automaticInterfaceScale;
   final VideoCompositionAdapter videoComposition;
   @override
   ConsumerState<BiliApp> createState() => _BiliAppState();
@@ -73,7 +77,7 @@ VideoDetail _episodeDetail(PgcSeason season, PgcEpisode episode) => VideoDetail(
     id: VideoId(episode.bvid ?? ''),
     title: '${season.title} · ${episode.displayTitle}',
     coverUrl: (episode.coverUrl ?? season.coverUrl)?.toString() ?? '',
-    author: season.title,
+    author: season.instructor ?? season.title,
     duration: episode.duration ?? Duration.zero,
   ),
   description: season.description,
@@ -81,6 +85,7 @@ VideoDetail _episodeDetail(PgcSeason season, PgcEpisode episode) => VideoDetail(
   parts: [
     VideoPart(
       cid: episode.cid ?? '',
+      courseEpisodeId: season.course ? episode.episodeId : null,
       page: 1,
       title: episode.displayTitle,
       duration: episode.duration ?? Duration.zero,
@@ -113,6 +118,17 @@ class _BiliAppState extends ConsumerState<BiliApp> {
   @override
   void initState() {
     super.initState();
+    // Restore the saved scale before showing a frame at the system default.
+    final binding = WidgetsBinding.instance;
+    binding.deferFirstFrame();
+    unawaited(
+      ref
+          .read(settingsControllerProvider.future)
+          .then<void>(
+            (_) => binding.allowFirstFrame(),
+            onError: (Object _, StackTrace _) => binding.allowFirstFrame(),
+          ),
+    );
     _router = createBiliRouter(
       onExitRequested: widget.dependencies.close,
       onActivateBrowser: () => unawaited(widget.dependencies.window.activate()),
@@ -135,6 +151,7 @@ class _BiliAppState extends ConsumerState<BiliApp> {
               activationToken: activationToken,
               onCloseRequested: onClose,
               onError: onError,
+              wrapPlaybackView: (child) => InterfaceScale(child: child),
               playback: playback == null
                   ? null
                   : WorkspacePlaybackWindow(
@@ -245,11 +262,17 @@ class _BiliAppState extends ConsumerState<BiliApp> {
           return PlaybackPanel(
             detail: detail,
             part: detail.parts.first,
-            target: PgcPlaybackTarget(
-              episode.episodeId,
-              cid: episode.cid,
-              seasonId: season.id.value,
-            ),
+            target: season.course
+                ? CoursePlaybackTarget(
+                    episode.episodeId,
+                    detail.parts.first.cid,
+                    seasonId: season.seasonId,
+                  )
+                : PgcPlaybackTarget(
+                    episode.episodeId,
+                    cid: episode.cid,
+                    seasonId: season.id.value,
+                  ),
             title: '${season.title} · ${episode.displayTitle}',
             settings: settings,
             danmakuComposerBuilder: (context) => PgcDanmakuComposer(
@@ -270,6 +293,7 @@ class _BiliAppState extends ConsumerState<BiliApp> {
       ),
       pgcCommentsBuilder: (context, season, episode) => VideoCommentsPanel(
         detail: _episodeDetail(season, episode),
+        target: season.commentTarget(episode),
         onOpenUser: (user) => context.go('/user/${user.value}'),
         onLogin: () => showAppDialog<void>(
           context: context,
@@ -430,6 +454,8 @@ class _BiliAppState extends ConsumerState<BiliApp> {
 
   @override
   Widget build(BuildContext context) {
+    // Keep consent and source changes observed while a card opens another tab.
+    ref.listen(recommendationReporterProvider, (_, _) {});
     ref.listen(authControllerProvider, (previous, next) {
       // Session epoch may change while the visible MID and name stay the same.
       ref.invalidate(watchLaterQueueRegistryProvider);
@@ -465,7 +491,7 @@ class _BiliAppState extends ConsumerState<BiliApp> {
       enabled: settings.rememberVolumeGlobally,
       defaultVolume: settings.defaultVolume,
     );
-    return ImageCacheBinding(
+    final app = ImageCacheBinding(
       cache: widget.dependencies.images,
       child: MaterialApp.router(
         title: 'BiliSail',
@@ -531,6 +557,10 @@ class _BiliAppState extends ConsumerState<BiliApp> {
         },
         routerConfig: _router,
       ),
+    );
+    return InterfaceScale(
+      automaticFactor: widget.automaticInterfaceScale,
+      child: app,
     );
   }
 }

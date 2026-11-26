@@ -3,6 +3,30 @@
 应用版本号只维护在根 `pubspec.yaml`（`x.y.z+N`），每个可构建的变更都会递增。
 更早版本见 [GitHub Releases](https://github.com/ZakiuC/BiliSail/releases)。
 
+## 1.4.3+19
+
+### 上游同步（CKopoer/BiliSail → fbf934c）
+
+合并上游 12 个新提交，保留本分支全部高画质增强能力：
+
+- **杜比全景声 DD+ 播放**：Windows 与 Android 支持杜比全景声（Android 经系统 Media3）。
+- **原生 HDR 输出**：Windows／Android 新增原生 HDR 视频输出链路。
+- **单文件 UGC 播放**：支持非 DASH 的单文件播放地址；多分段响应不会只播首段。
+- **课堂视频（PUGV）**：新增课堂播放目标与解析端点。
+- **下载画质过滤**：下载面板只显示实际可用的画质／编码组合。
+- **界面缩放**：新增界面缩放偏好设置。
+- 投稿卡片显示观看进度；推荐卡片可选曝光／点击上报；评论楼中楼分隔线间距优化；
+  D3D11 首帧纹理尺寸上报修复；iOS 动态详情侧滑返回。
+- **播放链路迁移**：media_kit 切换到 Predidit 基线 + Native Assets（Windows 两目标保留
+  CKopoer 分支的 DD+ 原生库）；Flutter 工具链升级到 main 分支固定提交。
+  构建须使用 `.flutter-version` 指定的 Flutter main 提交，CI 已同步。
+
+### 本分支保留
+
+- PlayView 高画质链路、手机端身份重试、按来源整套切换请求头、逐档探测与菜单一致性、
+  选档精确匹配（点 1080P+ 播 1080P+）、番剧地区解锁、伪装 Wi-Fi 等增强全部保留，
+  并与上游单文件／课堂／杜比全景声改动融合。
+
 ## 1.4.2+18
 
 ### 修复

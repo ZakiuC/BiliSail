@@ -5,6 +5,7 @@ import 'dart:isolate';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'clients/recommendation_report_client.dart';
 import 'cookies.dart';
 import 'decoding/pgc_season_decoder.dart';
 import 'models.dart';
@@ -61,6 +62,11 @@ final class BiliApiClient {
        _pgcSeasonDecoder = pgcSeasonDecoder ?? _decodePgcInIsolate;
 
   final ApiTransport _transport;
+  late final recommendationReports = RecommendationReportClient(
+    _transport,
+    cookieJar,
+    _clock,
+  );
   final bool _ownsTransport;
   final ApiSessionProvider? _sessionProvider;
   final ApiCookieJar cookieJar;
@@ -650,12 +656,13 @@ final class BiliApiClient {
     bool requireEpisodes = false,
     ApiRequestContext? context,
   }) async {
-    const endpoint = 'pgc_season';
+    final course = uri.path == '/pugv/view/web/season';
+    final endpoint = course ? 'course_season' : 'pgc_season';
     if (uri.scheme != 'https' ||
         uri.host != 'api.bilibili.com' ||
         uri.port != 443 ||
         uri.userInfo.isNotEmpty ||
-        uri.path != '/pgc/view/web/season') {
+        (!course && uri.path != '/pgc/view/web/season')) {
       throw ArgumentError('Unsupported PGC destination');
     }
     final active = boundedReadContext(context);
@@ -673,11 +680,17 @@ final class BiliApiClient {
         attemptBudget: attempts,
       );
       check();
-      final season = await _decodePgcSeason(response, active, endpoint, check);
+      final season = await _decodePgcSeason(
+        response,
+        active,
+        endpoint,
+        check,
+        course,
+      );
       check();
       if (!requireEpisodes || season.episodes.isNotEmpty) return season;
       if (attempts.isExhausted) {
-        throw const ApiFailure(ApiFailureCategory.unavailable, endpoint);
+        throw ApiFailure(ApiFailureCategory.unavailable, endpoint);
       }
       await _retryDelay(attempts.used - 1, deadline, active.cancellation);
     }
@@ -688,6 +701,7 @@ final class BiliApiClient {
     ApiRequestContext context,
     String endpoint,
     void Function() check,
+    bool course,
   ) async {
     // Also enforce the transport's 4 MiB limit for injected transports and
     // before copying bytes into the worker message.
@@ -695,7 +709,7 @@ final class BiliApiClient {
       throw ApiFailure(ApiFailureCategory.protocol, endpoint);
     }
     if (response.body.length < 512 * 1024) {
-      return decodePgcSeasonBytes(response.body);
+      return decodePgcSeasonBytes(response.body, course: course);
     }
     await _decodeGate.enter(
       context.cancellation,
@@ -705,7 +719,9 @@ final class BiliApiClient {
     );
     try {
       check();
-      return await _pgcSeasonDecoder(response.body);
+      return course
+          ? await _decodePgcInIsolate(response.body, course: true)
+          : await _pgcSeasonDecoder(response.body);
     } finally {
       // Cancellation discards output; the running worker retains its slot
       // until it really finishes, so cancelled work cannot exceed the budget.
@@ -2641,8 +2657,8 @@ final class BiliApiClient {
   }) async {
     final active = boundedReadContext(context);
     final attempts = _ReadAttemptBudget();
-    // Entitlement is checked only after a failed payload and reused within this
-    // operation. Complete DASH playback still needs no extra detail request.
+    // Reuse entitlement within this operation. Complete media with audio
+    // needs no extra detail request.
     late final access = getVideoDetail(
       bvid,
       context: active,
@@ -2736,6 +2752,17 @@ final class BiliApiClient {
     }
     final trial =
         !preview && (data['is_preview'] == true || data['is_preview'] == 1);
+    final segments = data['durl'];
+    if (!preview &&
+        data['dash'] == null &&
+        segments is List &&
+        segments.length == 1) {
+      final descriptions = data['accept_description'];
+      if (trial || descriptions is List && descriptions.contains('试看')) {
+        throw await _videoPlaybackFailure(readAccess, trial: true);
+      }
+      return _progressivePlayInfo(data, _map(segments.single, 'playurl'));
+    }
     final dash = _optionalMap(data['dash']);
     if (dash == null || dash['video'] == null) {
       throw await _videoPlaybackFailure(readAccess, trial: trial);
@@ -2796,6 +2823,54 @@ final class BiliApiClient {
     );
   }
 
+  static ApiPlayInfo _progressivePlayInfo(
+    Map<String, Object?> data,
+    Map<String, Object?> segment,
+  ) {
+    Uri? mediaUrl(Object? value) {
+      final url = _uri(value);
+      return url != null && url.host.isNotEmpty && url.userInfo.isEmpty
+          ? url
+          : null;
+    }
+
+    final url = mediaUrl(segment['url']);
+    final quality = _int(data['quality']);
+    final durationMs = _int(data['timelength']) ?? _int(segment['length']) ?? 0;
+    if (url == null || quality == null || quality <= 0 || durationMs <= 0) {
+      throw const ApiFailure(ApiFailureCategory.protocol, 'playurl');
+    }
+    final backups = segment['backup_url'];
+    final format = _string(data['format']) ?? '';
+    return ApiPlayInfo(
+      duration: Duration(milliseconds: durationMs),
+      dashVideo: const [],
+      dashAudio: const [],
+      acceptQuality: List.unmodifiable([quality]),
+      progressive: ApiMediaTrack(
+        id: quality,
+        url: url,
+        backupUrls: List.unmodifiable(
+          backups is List
+              ? backups.map(mediaUrl).whereType<Uri>()
+              : const <Uri>[],
+        ),
+        bandwidth: 0,
+        mimeType: format.startsWith('mp4')
+            ? 'video/mp4'
+            : format.startsWith('flv')
+            ? 'video/x-flv'
+            : '',
+        codecs: switch (_int(data['video_codecid'])) {
+          7 => 'avc1',
+          12 => 'hev1',
+          13 => 'av01',
+          _ => '',
+        },
+      ),
+    );
+  }
+
   static Map<String, String> _playurlWebContext() {
     final random = Random.secure();
     String placeholder(int bytes) => base64Encode(
@@ -2818,8 +2893,8 @@ final class BiliApiClient {
     bool trial = false,
     ApiFailure? originalFailure,
   }) async {
-    // Only unsupported/blocked play responses need this extra read. Successful
-    // authorized DASH playback keeps its existing request count and behavior.
+    // The detail response distinguishes restricted content from an unavailable
+    // stream and confirms entitlement for explicitly silent DASH media.
     final access = await readAccess();
     if (trial ||
         access.kind != ApiVideoAccessKind.normal && access.canWatch != true) {
@@ -3827,10 +3902,16 @@ Future<List<ApiDanmakuItem>> _decodeInIsolate(Uint8List bytes) {
   );
 }
 
-Future<ApiPgcSeason> _decodePgcInIsolate(Uint8List bytes) {
+Future<ApiPgcSeason> _decodePgcInIsolate(
+  Uint8List bytes, {
+  bool course = false,
+}) {
   final payload = TransferableTypedData.fromList([bytes]);
   return Isolate.run(
-    () => decodePgcSeasonBytes(payload.materialize().asUint8List()),
+    () => decodePgcSeasonBytes(
+      payload.materialize().asUint8List(),
+      course: course,
+    ),
   );
 }
 

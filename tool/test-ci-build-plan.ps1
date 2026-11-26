@@ -60,7 +60,7 @@ try {
   $checks++
   $windows = ((Invoke-Plan '1.2.5+0' 2).matrix | ConvertFrom-Json).include
   $arm64 = $windows | Where-Object target -eq 'windows-arm64'
-  if ($arm64.runner -cne 'windows-11-arm' -or $arm64.arch -cne 'x64') { throw 'Windows ARM64 requires an ARM64 host with the x64 Flutter SDK.' }
+  if ($arm64.runner -cne 'windows-11-arm' -or $arm64.arch -cne 'arm64') { throw 'Windows ARM64 requires an ARM64 host with a native ARM64 Flutter SDK.' }
   $checks++
   $allTargets = @('android-arm64', 'windows-x64', 'windows-arm64', 'macos-arm64', 'macos-x64', 'ios-arm64', 'linux-x64')
   for ($mask = 1; $mask -lt (1 -shl $allTargets.Count); $mask++) {
@@ -73,8 +73,13 @@ try {
     $entries = @(($plan.matrix | ConvertFrom-Json).include)
     $apple = @($entries | Where-Object { $_.target -like 'macos-*' -or $_.target -eq 'ios-arm64' })
     if ($apple.Count -and (@($apple | Where-Object cache_writer).Count -ne 1 -or
-        @($apple | Where-Object { $_.runner -cne 'macos-15' -or $_.arch -cne 'arm64' -or !$_.cache_sdk }).Count)) {
+        @($apple | Where-Object { $_.arch -cne 'arm64' -or !$_.cache_sdk }).Count)) {
       throw "Apple cross builds require one ARM64 host cache writer for subset $mask."
+    }
+    foreach ($entry in $apple) {
+      if ($entry.target -eq 'ios-arm64') {
+        if ($entry.runner -cne 'xcode-27' -or $entry.xcode -cne '27.1') { throw 'Incorrect iOS toolchain.' }
+      } elseif ($entry.runner -cne 'macos-15' -or $entry.xcode -cne '26.2') { throw "Incorrect toolchain for $($entry.target)." }
     }
     if (@($entries | Where-Object { $_.mux_cache_writer -ne ($_.target -ne 'linux-x64') }).Count) {
       throw 'Linux mux cache writes belong only to native regression.'

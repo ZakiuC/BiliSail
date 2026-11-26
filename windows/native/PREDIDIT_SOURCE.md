@@ -1,18 +1,12 @@
-# Predidit media-kit Native Assets
+# Windows 播放库来源
 
-2026-10-29 起，Windows 播放器改为 Predidit media-kit 的 D3D11/mailbox 输出。
-固定源码：<https://github.com/Predidit/media-kit/tree/83b7ca63772856e1ea0158916177e136f7b7b0be>。
-核心与视频插件采用 MIT；完整通知由 Flutter 包许可与本项目 `THIRD_PARTY_NOTICES.md` 保留。
+播放器核心与视频插件固定到 CKopoer/media-kit 的 `3493e859fe70dff908ba2fb4070162962f449ef2`。基线为 MIT 许可的 Predidit/media-kit `484639aca5ffc754a65876c22f01dbb070225732`。两者之间的差异是 Windows 的两项原生归档。视频继续使用 libmpv 的 D3D11 render API，应用在构建副本中应用首帧和生命周期补丁。[固定清单](https://github.com/CKopoer/media-kit/blob/3493e859fe70dff908ba2fb4070162962f449ef2/media_kit/hook/native_bundles.json)
 
-原生资产由该提交的 `media_kit/hook/native_bundles.json` 定义并由构建钩子校验：
+| 目标 | 原生归档 | SHA-256 |
+| --- | --- | --- |
+| Windows x64 | [mpv-dev-windows-x64.zip](https://github.com/CKopoer/libmpv-win32-video-cmake/releases/download/windows-ddp-2026-11-25/mpv-dev-windows-x64.zip) | `9468eb761f58e6f9397f5962f05c0712c643f7584e019e95181caf785192725a` |
+| Windows ARM64 | [mpv-dev-windows-arm64.zip](https://github.com/CKopoer/libmpv-win32-video-cmake/releases/download/windows-ddp-2026-11-25/mpv-dev-windows-arm64.zip) | `dc7dd1e8505f18d47d7f5373a980603e1ff7eb231ee78a9d16559e69e51a328c` |
 
-- Windows x64：<https://github.com/Predidit/libmpv-win32-video-cmake/releases/download/202609151348/mpv-dev-x86_64-20260915-git-0b7ed67.7z>
-- SHA-256：`8adceab30b6bcc5503fa9d3823b68f4acd15ee1c41d6dc2492826f373531c10a`
-- 必须使用带 `MPV_RENDER_API_TYPE_DXGI` 扩展的匹配 libmpv；不替换为旧 ANGLE 使用的 DLL。
+构建基于 Predidit 的 Windows 配方 `307dca75589a43a528183426404fea422123bd9f`，保留 mpv `1eb941fdb974fe25dc0ac68a33652c145ff41f9d`、FFmpeg `dd86debdbcec9ec057304c845859771bd6a10c8c` 及两者的上游补丁。FFmpeg 的允许组件中加入 `spdif` 封装器，使 mpv 可以将原始 E-AC-3 JOC 帧写入 IEC 61937 载波。交叉编译使用固定摘要的 BtbN LGPL 静态依赖镜像。mpv 关闭 GPL，FFmpeg 启用 version3 并关闭 GPL、nonfree。[构建配方](https://github.com/CKopoer/libmpv-win32-video-cmake/blob/e890502bf288762924ba7eeeca0bf6a479590431/scripts/bilisail-windows-sdk.sh) · [构建记录](https://github.com/CKopoer/libmpv-win32-video-cmake/actions/runs/45641869787)
 
-此前 `mpv/SOURCE.md` 和 `mpv.cmake` 是旧实现的历史材料，不再参与当前构建。
-不能把旧库的 `gpl=false` 或 LGPL 构建配置套用于新资产。mpv、FFmpeg 及其子依赖
-的二进制许可、构建配置和对应源码须按实际新归档另外核实和保留；Dart 包 MIT
-不能代替这些分发条件。本轮只进行本地构建与验证，不创建发布。
-
-实施与平台验收：<../../docs/predidit-media-migration.md>。
+Dart Native Assets hook 校验归档和解包文件。安装包的 `data/licenses/mpv` 保留许可文本、资产清单和 `provenance` 子目录，其中包含源码提交、镜像摘要、FFmpeg 配置、mpv 构建参数与子依赖声明。[播放能力与设备验证](../../docs/dolby-atmos-playback.md)

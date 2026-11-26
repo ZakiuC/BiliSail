@@ -381,6 +381,28 @@ class ApiPlaybackRepository
     final appWholeSource = appInfo ?? (playSource == 'app' ? info : null);
     var fromApp = appWholeSource != null;
     final source = appWholeSource ?? info;
+    // Single-file UGC (non-DASH) source. App PlayView always returns DASH, so
+    // a progressive track only exists on the Web response; prefer App DASH
+    // when available and fall back to the Web single file otherwise.
+    final progressive = source.progressive;
+    if (progressive != null) {
+      return PlaybackMedia(
+        kind: PlaybackMediaKind.progressive,
+        video: PlaybackTrack(
+          urls: orderMediaCdnUrls([
+            progressive.url,
+            ...progressive.backupUrls,
+          ], cdn),
+          codec: progressive.codecs,
+          bandwidth: progressive.bandwidth,
+        ),
+        audio: null,
+        quality: progressive.id,
+        qualities: source.acceptQuality,
+        duration: source.duration,
+        headers: fromApp ? appHeaders : webHeaders,
+      );
+    }
     var media = selectDashMedia(
       source,
       audioQuality: audioQuality,

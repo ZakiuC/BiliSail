@@ -16,6 +16,8 @@ import 'native_player_properties.dart';
 import 'native_buffering_diagnostics.dart';
 import 'native_load_observer.dart';
 import 'native_audio_gain.dart';
+import 'dolby_audio_output.dart';
+import 'android_dolby_backend.dart';
 import 'native_video_frame_queue.dart';
 import 'native_video_color.dart';
 import 'video_dimensions.dart';
@@ -62,17 +64,21 @@ final class MediaKitBackend
   NativeLoadObserver? _nativeLoad;
   Future<NativeLoadObserver>? _attachingLoad;
   NativeAudioGain? _audioGain;
+  WindowsDolbyOutput? _dolbyOutput;
   Future<mk.Player>? _creating;
   Future<void>? _disposal;
   PlaybackOperation? _preparation;
   PlaybackOperation? _seek;
   bool _disposed = false;
   bool _requiresVideoColorMapping = false;
+  bool _embeddedGpuNext = false;
+  bool _hdrHint = false;
   OpenOptions? _lastOptions;
   int _generation = 0;
   int _seekRevision = 0;
   NativeReadinessStage? _readinessStage;
   Timer? _colorDeadline;
+  Future<void> Function()? _sourceOptionsHook;
   bool _networkOpenError = false;
   bool _fatalLiveHlsRead = false;
   NativeBufferingDiagnostics? _bufferDiagnostics;
@@ -298,11 +304,13 @@ final class MediaKitBackend
     }
 
     String? identifier(String? text) =>
-        text != null && RegExp(r'^[A-Za-z0-9_-]{1,32}$').hasMatch(text)
+        text != null && RegExp(r'^[A-Za-z0-9_.-]{1,32}$').hasMatch(text)
         ? text
         : null;
     final ao = identifier(await read('current-ao'));
     final vo = identifier(await read('current-vo'));
+    final targetTransfer = identifier(await read('video-target-params/gamma'));
+    final outputMatrix = identifier(await read('video-out-params/colormatrix'));
     final buffer = double.tryParse(await read('audio-buffer') ?? '');
     final autosync = int.tryParse(await read('autosync') ?? '');
     final version = await read('mpv-version');
@@ -315,6 +323,9 @@ final class MediaKitBackend
     return {
       'audioOutput': ao,
       'videoOutput': vo,
+      'nativeHdrSurface': _videoOutput.hasHdrOutput,
+      'targetTransfer': targetTransfer,
+      'videoOutputMatrix': outputMatrix,
       'requestedAudioBufferSeconds': buffer?.isFinite == true ? buffer : null,
       'autosync': autosync,
       'androidSurfaceSize':
@@ -449,6 +460,7 @@ final class MediaKitBackend
     };
     final options = plan.options;
     final video = plan.media;
+    _hdrHint = video.isHdr;
     final audio = plan.audio;
     _lastOptions = options;
     final watch = Stopwatch()..start();
@@ -559,6 +571,13 @@ final class MediaKitBackend
           rate: options.requestedBufferAhead == null ? options.rate : 1,
         ),
     };
+    final previousHook = _sourceOptionsHook;
+    if (previousHook != null) player.native.onLoadHooks.remove(previousHook);
+    _sourceOptionsHook = player.registerFileOptions(
+      fileOptions,
+      isCurrent: () => generation == _generation && !_disposed,
+      onFailure: (error) => _nativeLoad?.state.failPreparation(error: error),
+    );
     // Restore selection on a reused player after a silent preview/audio-only
     // source. DASH streams are demuxed as one EDL timeline by mpv.
     await operation.wait(
@@ -573,7 +592,6 @@ final class MediaKitBackend
             mediaUri,
             httpHeaders:
                 liveHeaders?.fields ?? mediaTrack.requestPolicy.headers,
-            nativeOptions: fileOptions,
             // Resume as part of loading, before decoding the first frame.
             // Opening at zero and seeking afterward buffers twice when
             // returning from audio-only playback.
@@ -646,15 +664,44 @@ final class MediaKitBackend
         'DASH audio track did not become ready.',
       );
     }
+    if (Platform.isWindows &&
+        !plan.silent &&
+        !plan.live &&
+        isDolbyDigitalPlus(player.getProperty('current-tracks/audio/codec'))) {
+      final output = _dolbyOutput = WindowsDolbyOutput(
+        write: (name, value) {
+          final position = player.getProperty('time-pos');
+          final restore =
+              player.getProperty('seekable') == 'yes' &&
+              player.getProperty('seeking') != 'yes' &&
+              double.tryParse(position)?.isFinite == true;
+          // Reinitializing a decoder drops its prefetched audio. Refill at the
+          // presentation clock without overriding a pending user seek.
+          player.setProperty('file-local-options/$name', value);
+          if (restore) player.setProperty('time-pos', position);
+        },
+        isCurrent: () =>
+            !_disposed && _generation == generation && !operation.isCancelled,
+        rate: options.rate,
+        volume: options.volume,
+        gain: options.audioGainDb,
+      );
+      await operation.wait(output.start());
+    }
     if (requireVideoOutput) {
       // Track metadata is available through the SDK before presentation is
       // admitted. Configure the output, then verify its converted frame.
       try {
+        // mpv exposes a user-data node as JSON, including string quotes.
+        _embeddedGpuNext =
+            (Platform.isWindows || Platform.isLinux) &&
+            player.getProperty('user-data/bilisail-renderer') == '"gpu-next"';
         _requiresVideoColorMapping = configureNativeVideoColor(
+          embeddedGpuNext: _embeddedGpuNext,
           read: player.getProperty,
           write: player.setProperty,
           isAndroid: Platform.isAndroid,
-          onAndroidDolbyVision: _videoOutput.enableAndroidDolbyVision,
+          onAndroidDolbyVision: _videoOutput.enableAndroidGpuNext,
           codecHint: video.codec,
         );
         await operation.wait(
@@ -744,17 +791,24 @@ final class MediaKitBackend
     _enterStage(NativeReadinessStage.videoOutput);
     // Decoder metadata alone does not establish a native video output.
     // mpv renders a video frame while paused; no audio probe is needed.
-    await operation.wait(_videoOutput.firstFrameRendered);
+    await operation.wait(_videoOutput.waitForDecodedOutput());
+    bool colorReady(String? driver, String? matrix) {
+      if (Platform.isAndroid) return driver == 'gpu-next';
+      // The embedded GPU renderer applies the RPU after mpv's VO input.
+      if (_embeddedGpuNext) {
+        return driver == 'libmpv' && matrix == 'dolbyvision';
+      }
+      return matrix == 'bt.709';
+    }
+
     if (_requiresVideoColorMapping) {
-      // The official controller may publish dimensions before the
-      // filtered frame's output parameters. Confirm conversion through
-      // this source's native events before inspecting its final matrix.
       await _waitReady(
         player,
         generation,
-        () => Platform.isAndroid
-            ? load.state.videoOutputDriver == 'gpu-next'
-            : load.state.videoOutputMatrix == 'bt.709',
+        () => colorReady(
+          load.state.videoOutputDriver,
+          load.state.videoOutputMatrix,
+        ),
         const [],
         _remaining(watch, openBudget),
         'Video color conversion did not become ready.',
@@ -770,9 +824,7 @@ final class MediaKitBackend
         (profile.isEmpty || profile == '5');
     final mappingFailed =
         _requiresVideoColorMapping &&
-        (Platform.isAndroid
-            ? player.getProperty('current-vo') != 'gpu-next'
-            : outputMatrix != 'bt.709');
+        !colorReady(player.getProperty('current-vo'), outputMatrix);
     if (unmappedDolby || mappingFailed) {
       throw PlayerFailure(
         PlayerFailureKind.unsupportedVideoColor,
@@ -782,6 +834,7 @@ final class MediaKitBackend
     }
 
     _colorDeadline?.cancel();
+    _videoOutput.identifyHdrSource(hinted: _hdrHint);
     _videoOutput.confirmSourceFrame();
     _readinessStage = null;
     return videoDisplayDimensions(player.state.videoParams);
@@ -791,8 +844,11 @@ final class MediaKitBackend
   Future<void> confirmAudio(PlaybackOperation operation) =>
       _waitForDecodedAudio(_player!, _generation, operation);
   @override
-  Future<void> confirmPresentation(PlaybackOperation operation) =>
-      operation.wait(_videoOutput.videoFramePresented);
+  Future<void> confirmPresentation(PlaybackOperation operation) async {
+    await operation.wait(_videoOutput.videoFramePresented);
+    await operation.wait(_videoOutput.presentHdrIfSupported());
+  }
+
   Future<void> _waitForDecodedAudio(
     mk.Player player,
     int generation,
@@ -1021,17 +1077,42 @@ final class MediaKitBackend
   }
 
   @override
-  Future<void> setRate(double rate) => _player!.setRate(rate);
+  Future<void> setRate(double rate) async {
+    if (_dolbyOutput case final output?) {
+      output.rate = rate;
+      if (rate != 1) output.apply();
+    }
+    await _player!.setRate(rate);
+    _dolbyOutput?.apply();
+  }
+
   @override
-  Future<void> setVolume(double volume) => _player!.setVolume(volume);
+  Future<void> setVolume(double volume) async {
+    if (_dolbyOutput case final output?) {
+      output.volume = volume;
+      if (volume != 100) output.apply();
+    }
+    await _player!.setVolume(volume);
+    _dolbyOutput?.apply();
+  }
+
   @override
-  Future<void> setGainDb(double gainDb) =>
-      _audioGain!.apply(gainDb, smooth: false);
+  Future<void> setGainDb(double gainDb) async {
+    if (_dolbyOutput case final output?) {
+      output.gain = gainDb;
+      if (gainDb != 0) output.apply();
+    }
+    await _audioGain!.apply(gainDb, smooth: false);
+    _dolbyOutput?.apply();
+  }
+
   @override
   Duration? get buffered => _player?.state.buffer;
   @override
   void interrupt() {
     ++_generation;
+    _dolbyOutput?.stop();
+    _dolbyOutput = null;
     _preparation?.cancel();
     unawaited(cancelSeek().catchError((Object _) {}));
     _generationChanges.add(_generation);
@@ -1042,9 +1123,12 @@ final class MediaKitBackend
       // stop is dispatched outside media_kit's synchronous property path so
       // a blocked network load can be cancelled before release is queued.
       unawaited(
-        player.native
-            .command(['stop'])
-            .then<void>((_) {}, onError: (Object _, StackTrace _) {}),
+        () async {
+          // Keep mpv and its published DXGI swapchain alive until the native
+          // compositor has taken its own reference.
+          if (_videoOutput.hasHdrSource) await _videoOutput.retireHdr();
+          if (!player.native.disposed) await player.native.command(['stop']);
+        }().catchError((Object _) {}),
       );
     }
   }
@@ -1052,6 +1136,8 @@ final class MediaKitBackend
   @override
   bool canReuse(ValidatedSource plan) =>
       !_disposed &&
+      !(Platform.isAndroid && AndroidDolbyBackend.candidate(plan)) &&
+      !_videoOutput.hasHdrSource &&
       _player != null &&
       !_requiresVideoColorMapping &&
       _lastOptions?.videoDecoding == plan.options.videoDecoding &&
@@ -1059,6 +1145,8 @@ final class MediaKitBackend
 
   @override
   Future<void> resetForNextSource(PlaybackOperation operation) async {
+    _dolbyOutput?.stop();
+    _dolbyOutput = null;
     _bufferDiagnostics?.dispose();
     _bufferDiagnostics = null;
     ++_generation;
@@ -1088,6 +1176,7 @@ final class MediaKitBackend
     interrupt();
     _disposed = true;
     _colorDeadline?.cancel();
+    await _videoOutput.retireHdr();
     _videoOutput.clearPlayer();
     final creating = _creating;
     if (creating != null) {
@@ -1110,6 +1199,7 @@ final class MediaKitBackend
     final player = _player;
     // Keep the player and leases when native release is uncertain.
     if (player != null) await player.dispose();
+    await _videoOutput.releaseHdrOutput();
     _player = null;
     await _mediaLeases.close();
     _videoOutput.dispose();

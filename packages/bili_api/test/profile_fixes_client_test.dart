@@ -66,34 +66,28 @@ void main() {
       expect(result.vipType, 2);
     },
   );
-  test(
-    'profile prefers enhanced pendant and rejects unsafe enhancement',
-    () async {
-      for (final enhanced in [
-        '//i0.hdslb.com/enhanced.webp',
-        'file:///bad',
-        null,
-      ]) {
-        transport.handler = (_) => {
-          'card': {
-            'mid': '7',
-            'name': '用户',
-            'pendant': {
-              'image': '//i0.hdslb.com/static.png',
-              'image_enhance': enhanced,
-            },
+  test('profile prefers the enhanced pendant and falls back safely', () async {
+    const preferred = '//i0.hdslb.com/enhanced.webp';
+    for (final enhanced in [preferred, 'file:///bad', '', null]) {
+      transport.handler = (_) => {
+        'card': {
+          'mid': '7',
+          'name': '用户',
+          'pendant': {
+            'image': '//i0.hdslb.com/static.png',
+            'image_enhance': ?enhanced,
           },
-        };
-        final result = await client.loadProfile('7');
-        expect(
-          result.pendantUrl.toString(),
-          enhanced == '//i0.hdslb.com/enhanced.webp'
-              ? 'https://i0.hdslb.com/enhanced.webp'
-              : 'https://i0.hdslb.com/static.png',
-        );
-      }
-    },
-  );
+        },
+      };
+      final result = await client.loadProfile('7');
+      expect(
+        result.pendantUrl.toString(),
+        enhanced == preferred
+            ? 'https://i0.hdslb.com/enhanced.webp'
+            : 'https://i0.hdslb.com/static.png',
+      );
+    }
+  });
   test('unsafe and absent decoration urls remain absent', () async {
     transport.handler = (_) => {
       'card': {

@@ -43,11 +43,10 @@ cp "$work/tools/gtk-LICENSE.txt" "$work/tools/linuxdeploy-plugin-gtk.sh" "$gtk_n
 
 export APPIMAGE_EXTRACT_AND_RUN=1 NO_STRIP=1 DEPLOY_GTK_VERSION=3
 export LD_LIBRARY_PATH="$bundle/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-# The personal library plugin builds and bundles its pinned mpv source.
-# Never replace it with a host distro DLL during packaging.
+# Native Assets supplies libmpv and its immutable archive catalog.
 mpv="$bundle/lib/libmpv.so.2"
-[[ -f "$mpv" && -f "$bundle/data/licenses/mpv/SOURCE.json" ]] || {
-  echo 'Missing personally maintained libmpv and source provenance' >&2; exit 1;
+[[ -f "$mpv" && -f "$bundle/data/licenses/mpv/native_bundles.json" ]] || {
+  echo 'Missing native libmpv or bundle catalog' >&2; exit 1;
 }
 # Print the complete missing dependency set before linuxdeploy stops at the first.
 mpv_dependencies="$(ldd "$mpv")"
@@ -65,6 +64,11 @@ run_stage 'Populate AppDir and GTK dependencies' "$work/tools/linuxdeploy-x86_64
   --executable "$work/AppDir/usr/bin/bilisail" --library "$mpv" \
   --desktop-file "$repo/linux/packaging/dev.bilisail.bilisail.desktop" \
   --icon-file "$repo/linux/packaging/dev.bilisail.bilisail.png" --plugin gtk
+
+# linuxdeploy wraps our AppRun to source the GTK hook. AppRun already loads
+# those hooks and must see the original GDK_BACKEND before the first hook runs.
+cmp "$repo/linux/packaging/AppRun" "$work/AppDir/AppRun.wrapped"
+mv -T "$work/AppDir/AppRun.wrapped" "$work/AppDir/AppRun"
 
 # WebKitGTK release builds use a compiled absolute helper prefix. A build-time
 # replacement preserves ELF offsets; AppRun supplies the stable working folder.
@@ -115,7 +119,7 @@ manifest = json.loads(Path(sys.argv[1]).read_text())
 Path(sys.argv[2]).write_text(json.dumps({
     "runtime": manifest["runtime"], "runtimeVersion": manifest["runtime-version"],
     "applicationId": manifest["app-id"], "hostBaseline": "Ubuntu 24.04 x64",
-    "displayBackend": "X11 (XWayland on Wayland)",
+    "displayBackend": "Wayland (preferred), X11 fallback",
     "dependencyValidation": "AppDir and installed Flatpak Runtime ldd",
     "linuxdeployVersion": "1-alpha-20251107-1",
 }, indent=2) + "\n")

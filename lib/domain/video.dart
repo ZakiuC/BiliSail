@@ -1,4 +1,5 @@
 import 'user.dart';
+import 'recommendation_card.dart';
 import 'recommendation_source.dart';
 import 'video_access.dart';
 import 'recommendation_playback_context.dart';
@@ -38,6 +39,7 @@ final class VideoSummary {
     this.authorId,
     this.recommendationReason,
     this.recommendationFeedback,
+    this.recommendationCard,
     this.recommendationTarget,
     this.recommendationPlayback,
     this.previewCid,
@@ -59,6 +61,7 @@ final class VideoSummary {
   final UserId? authorId;
   final String? recommendationReason;
   final RecommendationFeedback? recommendationFeedback;
+  final RecommendationCard? recommendationCard;
   final RecommendationTarget? recommendationTarget;
   final RecommendationPlaybackContext? recommendationPlayback;
 
@@ -146,6 +149,7 @@ final class VideoPart {
     required this.title,
     required this.duration,
     this.interactiveEdgeId,
+    this.courseEpisodeId,
   });
 
   final String cid;
@@ -153,6 +157,7 @@ final class VideoPart {
   final String title;
   final Duration duration;
   final String? interactiveEdgeId;
+  final String? courseEpisodeId;
 
   (String, String?) get playbackKey => (cid, interactiveEdgeId);
 }

@@ -1,5 +1,9 @@
 # 播放、直播与弹幕设计
 
+当前组合根直接为各播放标签和预览创建 MediaKitEngine。源选择、分轨配置、首帧与渲染生命周期见 [Predidit 播放链路](validation/predidit-playback-2026-11-23.md)。
+
+Windows 和 Android 按当前显示设备选择 HDR 视频面，由播放器处理杜比视界 RPU，详见 [Windows 与 Android 原生 HDR 输出](validation/windows-android-native-hdr.md)。
+
 2026-11-22 对齐 PiliPlus 的直播启播流程。房间资料和播放地址并行获取。HLS／HTTP-FLV 获得原生加载确认后按当前播放意图开始，随后确认音视频与首帧。默认画质、同画质切流和首帧前暂停规则见[直播选择器与启播](validation/live-stream-audio-preferences-2026-10-30.md#直播启播与默认行为2026-11-22)。
 
 2026-11-20 将在线点播的前向解封装缓冲上限由 4 MiB 提高至 8 MiB，后向缓冲为 4 MiB，默认预读窗口为 16 秒乘起播倍速。悬停预览仍使用 5 秒窗口。
@@ -34,7 +38,7 @@
 
 2026-11-13 修复长按加速停顿及松开恢复时的追帧：在最新 `MediaKitBackend` 打开有声点播前恢复 50ms 输出缓冲、常驻 `scaletempo2` 与 `autosync=30`／音频同步。配置跟随原生实例生命周期，复用到直播或静音源时恢复首次读取的默认值；EDL、SDK 事件和换源复用沿用当前实现。回归原因、自动验证和设备边界见[倍速回归修复](validation/hold-rate-regression-2026-11-13.md)。
 
-2026-11-12：已移除 fvp／MDK，当前仅使用 media_kit。历史文档中的双后端实现、SDK、命令及测试记录保留当时事实，不再作为现行入口；清理与设置兼容见[移除记录](validation/fvp-removal-2026-11-12.md)。
+2026-11-12 移除 fvp／MDK，常规播放使用 media_kit。2026-11-25 起，Android 10 及以上为含 JOC 的杜比节目尝试使用单个 Media3 会话，同步分轨、系统音频解码和视频输出。Windows 继续由 mpv 处理音视频。[杜比全景声播放方案](dolby-atmos-playback.md) · [fvp 移除记录](validation/fvp-removal-2026-11-12.md)
 
 2026-11-12 播放入口改用 mpv EDL 双轨和 SDK 事件队列，移除额外原生客户端、hook、周期音频时钟查询与强制音频缓冲/变速滤镜。同配置且已就绪的媒体源可复用 media_kit 实例，取消、失败与配置变化保留释放屏障；行为与验证边界见[换源复用记录](validation/player-source-reuse-2026-11-12.md)，其中 fvp 部分已随本次清理退役。
 
@@ -239,6 +243,8 @@ PiliPlus `217fb54f` 及其锁定的 media-kit `73771ec3` 分别处理完成事�
 Bilibili playurl 的 DASH 响应通常提供 representation 信息而非可以直接播放的完整 MPD。**播放器能打开 MP4 URL，不等于已经实现带独立音轨的 Bilibili 播放。**
 
 首选路径：`DashPairSource → MediaKitEngine`，在暂停状态装载视频与外部音轨，确认轨道与目标进度准备好后统一播放。必须验证外部音轨是否获得需要的 headers、seek 同步和换轨行为，不能用两个互不关联的 Player 分别播放音视频。
+
+部分投稿（如 `BV19C4y1T7t3` 年度报告）通过同一 Web playurl 返回单条 `durl`。无 DASH 时，完整的单文件响应使用 `ProgressiveSource`，由播放器读取内嵌音轨，保留实际画质和备用 CDN。试看仍按权限错误处理，多段 `durl` 按资源不可用处理。参考 PiliPlus 的播放格式分流，代码由本项目独立实现。[样例视频](https://www.bilibili.com/video/BV19C4y1T7t3) · [PiliPlus 播放控制器](https://github.com/bggRGjQaUbCoE/PiliPlus/blob/217fb54f51f6764176319bbdedab2a7522d75401/lib/pages/video/controller.dart#L929-L961)
 
 2026-10-10 点播打开改为提前配置 mpv `audio-files`，由原生文件加载 worker 装载外部音轨；确认当前选中的外部文件后，播放时继续验证真实音频解码。避免串行 `audio-add` 网络等待占住命令锁，关闭、换源及 deadline 可中断准备。普通点播有不同备用地址时，首地址最多 6 秒（2026-10-11 从 8 秒调整），两次打开共享 35 秒预算；匹配当前文件的 mpv 错误终止事件立即结束就绪等待，普通错误日志继续等待。自动模式首地址仍保留服务端顺序，失败后的备用优先本次响应中的常规 CDN。直播和只有一个地址的源保持原预算。证据、竞态与跨平台边界见 [点播打开优化](validation/playback-startup.md)。
 

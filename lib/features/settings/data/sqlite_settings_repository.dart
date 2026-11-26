@@ -130,6 +130,9 @@ class SqliteSettingsRepository implements SettingsRepository {
       danmakuSystemFontFamily: decoded['danmakuSystemFontFamily'] is String
           ? decoded['danmakuSystemFontFamily'] as String
           : '',
+      interfaceScale: InterfaceScalePreference.fromPercent(
+        decoded['interfaceScalePercent'],
+      ),
       font:
           AppFontPreference.values
               .where((item) => item.name == decoded['font'])
@@ -376,6 +379,7 @@ class SqliteSettingsRepository implements SettingsRepository {
         'theme': value.theme.name,
         'orientation': value.orientation.name,
         'font': value.font.name,
+        'interfaceScalePercent': value.interfaceScale.percent,
         'systemFontFamily': value.systemFontFamily,
         'danmakuSystemFontFamily': value.danmakuSystemFontFamily,
         'danmakuEnabled': value.danmakuEnabled,

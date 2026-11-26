@@ -59,7 +59,7 @@ void main() {
         expect(settings.wheelDampingRatio, .75);
       }
     }
-    expect(database.schemaVersion, 3);
+    expect(database.schemaVersion, 4);
   });
   test(
     'wheel animation migrates and persists without changing spring damping',
@@ -96,7 +96,7 @@ void main() {
         expect(snapshot['schemaVersion'], 57);
         expect(snapshot['wheelScrollAnimation'], mode.name);
       }
-      expect(database.schemaVersion, 3);
+      expect(database.schemaVersion, 4);
     },
   );
   test('tab close mouse options migrate with safe defaults', () async {
@@ -118,7 +118,7 @@ void main() {
       expect(loaded.closeTabOnDoubleClick, isFalse);
       expect(loaded.theme, AppThemePreference.dark);
     }
-    expect(database.schemaVersion, 3);
+    expect(database.schemaVersion, 4);
   });
 
   test(
@@ -277,7 +277,7 @@ void main() {
       color: 0xffffff,
       colorful: false,
     ));
-    expect(database.schemaVersion, 3);
+    expect(database.schemaVersion, 4);
   });
 
   test(
@@ -405,7 +405,7 @@ void main() {
       }
       await repository.save(const AppSettings.defaults());
       expect((await repository.load()).continuousRelatedPlayback, isFalse);
-      expect(database.schemaVersion, 3);
+      expect(database.schemaVersion, 4);
     },
   );
   test(
@@ -458,7 +458,7 @@ void main() {
         (await repository.load()).preferredAudioQuality,
         AudioQualityPreference.aac192,
       );
-      expect(database.schemaVersion, 3);
+      expect(database.schemaVersion, 4);
     },
   );
   test('prerelease checks default off, preserve saved choices and migrate old snapshots', () async {
@@ -485,7 +485,7 @@ void main() {
         expect(reloaded.theme, AppThemePreference.dark);
       }
     }
-    expect(database.schemaVersion, 3);
+    expect(database.schemaVersion, 4);
   });
   for (final platform in [TargetPlatform.macOS, TargetPlatform.iOS]) {
     test(
@@ -542,7 +542,7 @@ void main() {
           (await repo.load()).shortcuts.isEnabled(ShortcutAction.bossKey),
           isFalse,
         );
-        expect(database.schemaVersion, 3);
+        expect(database.schemaVersion, 4);
       },
     );
   }
@@ -574,7 +574,7 @@ void main() {
           expect(reloaded.theme, AppThemePreference.dark);
         }
       }
-      expect(database.schemaVersion, 3);
+      expect(database.schemaVersion, 4);
     },
   );
   test('remembered volume rejects invalid stored values', () async {
@@ -623,7 +623,7 @@ void main() {
         );
       }
     }
-    expect(database.schemaVersion, 3);
+    expect(database.schemaVersion, 4);
   });
   test(
     'playback sidebar collapse defaults off and persists both choices',
@@ -737,7 +737,7 @@ void main() {
         expect(reloaded.autoPlay, isFalse);
         expect(reloaded.theme, AppThemePreference.dark);
       }
-      expect(database.schemaVersion, 3);
+      expect(database.schemaVersion, 4);
     });
   }
 
@@ -837,7 +837,7 @@ void main() {
         expect(reloaded.sponsorBlockBottomPadding, expected);
         expect(reloaded.theme, AppThemePreference.dark);
       }
-      expect(database.schemaVersion, 3);
+      expect(database.schemaVersion, 4);
     },
   );
   test('wheel damping migrates and survives save and reload', () async {
@@ -869,7 +869,7 @@ void main() {
       expect(snapshot['schemaVersion'], greaterThanOrEqualTo(28));
       expect(snapshot['wheelDampingRatio'], ratio);
     }
-    expect(database.schemaVersion, 3);
+    expect(database.schemaVersion, 4);
   });
 
   for (final defaults in [
@@ -991,7 +991,7 @@ void main() {
         expect(snapshot['schemaVersion'], greaterThanOrEqualTo(28));
         expect(snapshot['preferredLiveQuality'], quality);
       }
-      expect(database.schemaVersion, 3);
+      expect(database.schemaVersion, 4);
     },
   );
   test(
@@ -1024,7 +1024,7 @@ void main() {
         expect(loaded.audioNormalization, mode);
         expect(loaded.defaultVolume, 30);
       }
-      expect(database.schemaVersion, 3);
+      expect(database.schemaVersion, 4);
     },
   );
   test(
@@ -1095,7 +1095,7 @@ void main() {
           expect(snapshot['schemaVersion'], greaterThanOrEqualTo(28));
           expect(snapshot['playerControlsMode'], mode.name);
         }
-        expect(database.schemaVersion, 3);
+        expect(database.schemaVersion, 4);
       },
     );
   }
@@ -1124,7 +1124,7 @@ void main() {
         expect(reloaded.copyWith(cacheImages: false).mediaCdn, preference);
         expect(reloaded.theme, AppThemePreference.dark);
       }
-      expect(database.schemaVersion, 3);
+      expect(database.schemaVersion, 4);
     },
   );
   test('empty settings use the injected platform default', () async {
@@ -1174,7 +1174,7 @@ void main() {
         (await platformRepository.load()).navigationMode,
         WorkspaceNavigationMode.singlePage,
       );
-      expect(database.schemaVersion, 3);
+      expect(database.schemaVersion, 4);
     });
   }
   for (final mode in WorkspaceNavigationMode.values) {
@@ -1256,7 +1256,7 @@ void main() {
       ) as Map<String, Object?>;
       expect(snapshot['schemaVersion'], greaterThanOrEqualTo(28));
       expect(snapshot['theme'], 'dark');
-      expect(database.schemaVersion, 3);
+      expect(database.schemaVersion, 4);
     },
   );
   test('navigation modes survive reload and unknown values use the injected default', () async {
@@ -1308,7 +1308,7 @@ void main() {
             .concurrentPlaybackEnabled,
         allowed,
       );
-      expect(database.schemaVersion, 3);
+      expect(database.schemaVersion, 4);
     }
   });
   test(
@@ -1386,7 +1386,7 @@ void main() {
       expect(reloaded.danmakuFont, loaded.danmakuFont);
       expect(reloaded.theme, loaded.theme);
       expect(reloaded.autoPlay, loaded.autoPlay);
-      expect(database.schemaVersion, 3);
+      expect(database.schemaVersion, 4);
     },
   );
   test('invalid installed family fields fall back without losing other preferences', () async {
@@ -1576,7 +1576,7 @@ void main() {
       expect((await repository.load()).danmakuLineSpacing, 0);
       await repository.save(reloaded.copyWith(danmakuLineSpacing: 5));
       expect((await repository.load()).danmakuLineSpacing, 5);
-      expect(database.schemaVersion, 3);
+      expect(database.schemaVersion, 4);
     },
   );
   test(
@@ -1599,7 +1599,7 @@ void main() {
       expect(reloaded.danmakuArea, .5);
       expect(reloaded.defaultVolume, 35.5);
       expect(reloaded.danmakuBlockedWords, ['spoiler']);
-      expect(database.schemaVersion, 3);
+      expect(database.schemaVersion, 4);
     },
   );
 }

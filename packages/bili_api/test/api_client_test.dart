@@ -207,12 +207,8 @@ void main() {
   test(
     'comments and replies prefer enhanced decorations and fall back safely',
     () async {
-      for (final enhanced in [
-        '//i0.hdslb.com/enhanced.webp',
-        'file:///bad',
-        '',
-        null,
-      ]) {
+      const preferred = '//i0.hdslb.com/enhanced.webp';
+      for (final enhanced in [preferred, 'file:///bad', '', null]) {
         final client = BiliApiClient(
           transport: _FakeTransport(
             (_, _) async => _jsonResponse({
@@ -249,13 +245,13 @@ void main() {
           final c = page.items.single;
           expect(
             c.pendantUrl.toString(),
-            enhanced == '//i0.hdslb.com/enhanced.webp'
+            enhanced == preferred
                 ? 'https://i0.hdslb.com/enhanced.webp'
                 : 'https://i0.hdslb.com/pendant.png',
           );
           expect(
             c.decorationImageUrl.toString(),
-            enhanced == '//i0.hdslb.com/enhanced.webp'
+            enhanced == preferred
                 ? 'https://i0.hdslb.com/enhanced.webp'
                 : 'https://i0.hdslb.com/card.png',
           );

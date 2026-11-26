@@ -56,6 +56,7 @@ final class PgcClient {
     String? seasonId,
     String? episodeId,
     bool requireEpisodes = false,
+    bool course = false,
     ApiRequestContext? context,
   }) async {
     if (seasonId == null && episodeId == null) {
@@ -65,10 +66,11 @@ final class PgcClient {
     if (episodeId != null) _validateId(episodeId);
     try {
       return await api.requestPgcSeason(
-        Uri.https('api.bilibili.com', '/pgc/view/web/season', {
-          'season_id': ?seasonId,
-          'ep_id': ?episodeId,
-        }),
+        Uri.https(
+          'api.bilibili.com',
+          course ? '/pugv/view/web/season' : '/pgc/view/web/season',
+          {'season_id': ?seasonId, 'ep_id': ?episodeId},
+        ),
         requireEpisodes: requireEpisodes,
         context: context,
       );
@@ -90,12 +92,14 @@ final class PgcClient {
   Future<ApiPlayInfo> getPlayInfo(
     String episodeId, {
     int qn = 80,
+    String? courseCid,
     ApiRequestContext? context,
   }) async {
     _validateId(episodeId);
     if (qn < 1 || qn > 30000) throw ArgumentError.value(qn, 'qn');
+    if (courseCid != null) _validateId(courseCid);
     try {
-      return await _officialPlayInfo(episodeId, qn, context);
+      return await _officialPlayInfo(episodeId, qn, courseCid, context);
     } on ApiFailure catch (error) {
       final fallback = await _resolver();
       if (fallback == null || !_isRegionRefusal(error)) rethrow;
@@ -109,26 +113,35 @@ final class PgcClient {
   Future<ApiPlayInfo> _officialPlayInfo(
     String episodeId,
     int qn,
+    String? courseCid,
     ApiRequestContext? context,
   ) async {
-    const endpoint = 'pgc_playurl';
+    final endpoint = courseCid == null ? 'pgc_playurl' : 'course_playurl';
     late final Map<String, Object?> data;
     try {
       data = await api.requestJson(
-        Uri.https('api.bilibili.com', '/pgc/player/web/playurl', {
-          'ep_id': episodeId,
-          'qn': '$qn',
-          'fnver': '0',
-          'fnval': '4048',
-          'fourk': '1',
-          'module': 'bangumi',
-          'voice_balance': '1',
-        }),
+        Uri.https(
+          'api.bilibili.com',
+          courseCid == null
+              ? '/pgc/player/web/playurl'
+              : '/pugv/player/web/playurl',
+          {
+            'cid': ?courseCid,
+            'ep_id': episodeId,
+            'qn': '$qn',
+            'fnver': '0',
+            'fnval': '4048',
+            'fourk': '1',
+            if (courseCid == null) 'module': 'bangumi',
+            'voice_balance': '1',
+          },
+        ),
         endpoint,
         context: context,
       );
     } on ApiFailure catch (error) {
-      if (const {-10403, -10404}.contains(error.businessCode)) {
+      if (const {-10403, -10404}.contains(error.businessCode) ||
+          (courseCid != null && error.businessCode == -403)) {
         throw ApiFailure(
           ApiFailureCategory.permission,
           endpoint,

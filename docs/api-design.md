@@ -1,5 +1,9 @@
 # API、鉴权与数据边界
 
+2026-11-24 课程（PUGV）以 Web Cookie 读取 `api.bilibili.com` 的 JSON 接口。`GET /pugv/view/web/season` 接受 `ep_id` 或 `season_id`，返回课程、章节及课时目录；`GET /pugv/player/web/playurl` 使用 `ep_id/cid/qn/fnver/fnval/fourk` 获取可播放的 DASH 音视频分轨。两者无 WBI、CSRF 或客户端翻页，沿用 25 秒总期限、账号 epoch、取消与有界读重试。课时时长以秒计，目录保留不可播项。每一课时的评论用 `oid=课时 ID, type=33`。登录账号沿用原有心跳设置和单次 CSRF POST，课程使用 `type=10, aid, cid, epid, sid`。课程与影视详情分开缓存，本地 SQLite v4 为课时新增可空列。
+
+协议对照本地 PiliPlus `217fb54f51f6764176319bbdedab2a7522d75401` 的 `lib/http/search.dart`、`lib/http/video.dart`、`lib/models/common/video/video_type.dart` 和 `lib/pages/video/reply/controller.dart`。本项目独立实现 Web PUGV 接口与页面，复用已有播放器。[公开样本](https://www.bilibili.com/cheese/play/ep20766) 的游客目录含 603 节，其中 3 节可试看。Windows 已验证首节 146 秒源的音视频解码及进度推进。已购账号、线上账号写入和移动设备播放尚未实测。
+
 2026-11-16 App 推荐继续使用 GET `app.bilibili.com/x/v2/feed/index`，改为显式 flush／pull 场景与服务端首卡锚点，采用与现有 HD 凭据一致的 query／UA／签名。Android 读取公开型号、系统及网络事实；其他平台使用固定参考。推荐 trackid 经内存上下文传到既有 Web 播放心跳的 track_id／from_spmid，不增加端点或写请求次数。协议与验证见[请求和归因修正](validation/app-recommendation-alignment-2026-11-16.md)。
 
 2026-11-15 PGC 沿用 `GET https://api.bilibili.com/pgc/player/web/playurl` 的 Web Cookie profile、`ep_id/qn/fnver/fnval/fourk/module/voice_balance` 参数、JSON `result`、有界只读重试、总 deadline 和取消／epoch；无新增签名、CSRF 或分页。增加可选 `clip_info_list` 元数据解析：`CLIP_TYPE_OP/ED`、以秒计的 `start/end`，转换为毫秒后检查源时长与正向区间，最多 64 项。未知／非法项和缺失列表不阻塞播放，试看不启用整集跳过数据。官方与空降优先级、精确参考提交及在线样本见[PGC 跳过记录](validation/pgc-skip-segments-2026-11-15.md)。
@@ -284,7 +288,7 @@ Cookie 由 domain/path/secure/expiry 规则的 CookieStore 维护，持久化整
 | --- | --- |
 | 取消、旧 epoch、旧 query | 停止，不 toast，不重试，不写缓存 |
 | 网络断开/超时/部分 5xx | 对读请求最多额外 2 次，指数退避+抖动；每次网络尝试最多 2 秒，且不超过剩余总 deadline |
-| UGC playurl 缺少 DASH／所需音视频轨，或未分类业务错误 | 核对权益后仅重试 `unavailable`；与网络重试、WBI 重签共用最多 3 次 playurl 请求和同一 deadline，见[播放地址重试](validation/playurl-unavailable-retry-2026-11-05.md) |
+| UGC playurl 缺少可用媒体，或未分类业务错误 | 投稿主播放支持 DASH 和完整的单条 `durl`。缺少可用媒体时核对权益后仅重试 `unavailable`，与网络重试、WBI 重签共用最多 3 次 playurl 请求和同一 deadline。[播放地址重试](validation/playurl-unavailable-retry-2026-11-05.md) |
 | 限流或风控 | 停止自动重试，遵守 Retry-After 或冷却；向用户显示可恢复状态 |
 | 认证失效 | 单飞刷新或重新登录；不循环切换 Web/App/TV |
 | 内容不存在/权限不足/区域受限 | 明确不可用；不尝试其他通道绕过服务端限制 |
@@ -323,3 +327,18 @@ Protobuf 只引入所需消息及传递依赖，记录源提交、生成器版�
 ## 直播进房与多类型历史（2026-11-07）
 
 直播进入已激活房间后使用 `api.live.bilibili.com` POST `/xlive/web-room/v1/index/roomEntryAction`，Web Cookie、查询参数 CSRF、JSON `room_id/platform`，单次上报不重放。关注直播使用同域 GET `/xlive/web-ucenter/user/following`，按 `totalPage` 显式分页、只展示在播主播。历史列表与搜索增加直播、专栏、文集和课程，保留真实业务身份与删除键；视频统计仅补齐点播条目。协议字段、PiliPlus 固定来源、账号与生命周期边界及未测项见[直播与多类型历史](validation/live-history-types-2026-11-07.md)。
+
+## 首页推荐卡片曝光与点击
+
+在「设置 → 推荐流 → 上报推荐卡片曝光和点击」开启后，按产生卡片的推荐来源选择协议。新安装、旧设置和恢复默认均为关闭。
+
+| 推荐来源 | HTTPS POST | 事件与身份 |
+| --- | --- | --- |
+| Web、桌面端 / PC | `data.bilibili.com/v2/log/web?content_type=pbrequest&logid=021436&disable_compression=true` | 官网 reporter-pb 的二进制请求。曝光合并为 `333.1007.tianma.feed-card.show` 的 `showlist`，每次点击保留独立的 `333.1007.tianma.feed-card.click`。沿用卡片的内容 ID、CID、track_id、对应来源的 feed_version 和 fresh_type，记录实际展示位置。Web 设备标识和用户 ID 取自适用于目标域的 Cookie。 |
+| App | `dataflow.biliapi.com/log/pbmobile/unrealtime?android` | Neuron 异步批量通道，`Neuron-Events` 指明帧数，每个 RDIO 帧包含元数据和一个 AppEvent Protobuf。曝光为 `tm.recommend.feed-card.0.show`，点击为 `tm.recommend.main-card.0.click`。使用拉取推荐的 Android HD 协议身份、设备标识、可用的 MID 和原始响应内序号。 |
+
+两种 POST 都只发送一次，超时上限 3 秒。账号凭据不随请求转发。应用前台、推荐页可见且卡片可见面积达到一半时计一次曝光。点击早于可见性采样时同时记曝光。同一响应的卡片滚回或在刷新后保留时沿用曝光记录。点击、悬停预览和卡片菜单各自独立。
+
+发送器在 300 毫秒窗口内合批，一次只发送一批，内存中最多等待 32 条事件。队列已满时优先保留新点击，失败的批次直接释放。关闭开关、切换来源或 App 推荐身份会清理等待队列并取消在途请求。账号切换沿用会话取消与 epoch 校验。
+
+网页字段与消息结构核对自[首页推荐脚本](https://s1.hdslb.com/bfs/static/shanks/laputa-home/assets/index-a5f8e5ab.js)和[官方 reporter-pb](https://s1.hdslb.com/bfs/seed/jinkela/short/reporter-pb/index.js)。移动端参考[官方下载中心](https://app.bilibili.com/)的 Android 9.21.0（9210200）中 Pegasus、Neuron RemotePoster 和 InfocProto。协议测试通过传输替身解码请求，覆盖批量、位置归因、失败单次发送与取消。线上入库与推荐排序效果未验证。
