@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/ZakiuC/BiliSail/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/ZakiuC/BiliSail/ci.yml?label=CI" alt="CI 状态"></a>
+  <a href="https://github.com/ZakiuC/BiliSail/actions/workflows/auto-release-preview.yml"><img src="https://img.shields.io/github/actions/workflow/status/ZakiuC/BiliSail/auto-release-preview.yml?branch=master&amp;label=CI" alt="CI 状态"></a>
   <a href="pubspec.yaml"><img src="https://img.shields.io/badge/dynamic/yaml?url=https%3A%2F%2Fraw.githubusercontent.com%2FZakiuC%2FBiliSail%2Fmaster%2Fpubspec.yaml&amp;query=%24.version&amp;label=version&amp;color=fb7299" alt="源码版本（pubspec.yaml）"></a>
   <a href="https://github.com/ZakiuC/BiliSail/releases"><img src="https://img.shields.io/github/v/release/ZakiuC/BiliSail?include_prereleases&amp;sort=date&amp;label=release&amp;color=fb7299" alt="最新公开发布版本（含预发布）"></a>
   <a href="docs/validation/ci-cd.md"><img src="https://img.shields.io/badge/Flutter-main-02569B?logo=flutter&amp;logoColor=white" alt="Flutter main"></a>
