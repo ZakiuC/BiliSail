@@ -6,6 +6,7 @@ import 'dart:async';
 
 import '../core/platform/app_request_device.dart';
 import '../core/platform/live_network.dart';
+import '../core/platform/playback_audio_focus.dart';
 
 import 'dart:io';
 
@@ -446,6 +447,7 @@ class AppDependencies {
     } catch (_) {
       reportSystemMediaFailure();
     }
+    final audioFocus = await PlaybackAudioFocus.mobile();
     final playback = PlaybackManager(
       systemMediaControls: systemMedia,
       createSession: (sleepTimer) {
@@ -465,6 +467,7 @@ class AppDependencies {
           networkContent: networkContent,
         );
         return PlaybackSession(
+          audioFocus: audioFocus,
           cardPreviews: Platform.isWindows ? cardPreviews : null,
           sleepTimer: sleepTimer,
           rateMemory: playbackRateMemory,

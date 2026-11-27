@@ -35,6 +35,7 @@ dependencies:
   url_launcher: 6.3.3
   package_info_plus: 10.2.2
   audio_service: 0.18.19
+  audio_session: 0.2.4
   audio_service_mpris: 1.0.0-beta.3
   bili_api:
     path: packages/bili_api
@@ -55,12 +56,12 @@ dependency_overrides:
     git:
       url: https://github.com/CKopoer/media-kit.git
       path: media_kit
-      ref: 3493e859fe70dff908ba2fb4070162962f449ef2
+      ref: 4055fd1a0d3dc0d54502c0747c5ca65be704c551
   media_kit_video:
     git:
       url: https://github.com/CKopoer/media-kit.git
       path: media_kit_video
-      ref: 3493e859fe70dff908ba2fb4070162962f449ef2
+      ref: 4055fd1a0d3dc0d54502c0747c5ca65be704c551
 
 dev_dependencies:
   flutter_driver:
