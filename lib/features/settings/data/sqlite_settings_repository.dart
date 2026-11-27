@@ -229,8 +229,6 @@ class SqliteSettingsRepository implements SettingsRepository {
       pgcResolverEnabled: boolean('pgcResolverEnabled', false),
       pgcResolverHk: text('pgcResolverHk'),
       pgcResolverTw: text('pgcResolverTw'),
-      pgcResolverSea: text('pgcResolverSea'),
-      pgcResolverCn: text('pgcResolverCn'),
       pgcResolverDefaultRegion: text('pgcResolverDefaultRegion'),
       mediaCdn:
           MediaCdnPreference.values
@@ -414,8 +412,6 @@ class SqliteSettingsRepository implements SettingsRepository {
         'pgcResolverEnabled': value.pgcResolverEnabled,
         'pgcResolverHk': value.pgcResolverHk,
         'pgcResolverTw': value.pgcResolverTw,
-        'pgcResolverSea': value.pgcResolverSea,
-        'pgcResolverCn': value.pgcResolverCn,
         'pgcResolverDefaultRegion': value.pgcResolverDefaultRegion,
         'mediaCdn': value.mediaCdn.name,
         'videoDecoding': value.videoDecoding.name,

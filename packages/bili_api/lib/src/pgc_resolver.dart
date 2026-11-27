@@ -66,6 +66,16 @@ final class PgcResolver {
   final bool _ownsTransport;
   final DateTime Function() _clock;
   bool _closed = false;
+  ApiFailure? _lastFailure;
+
+  /// Diagnostic hint for the most recently finished [resolveSeason] or
+  /// [resolvePlayInfo]: the last candidate failure, or null when the call
+  /// succeeded or never ran.
+  ///
+  /// Every candidate failure is swallowed on purpose so the caller keeps the
+  /// official error; this getter exists for health checks that need to explain
+  /// why an address did not work. Do not use it for control flow.
+  ApiFailure? get lastFailure => _lastFailure;
 
   static const _seasonEndpoint = 'pgc_resolver_season';
   static const _playEndpoint = 'pgc_resolver_playurl';
@@ -97,6 +107,7 @@ final class PgcResolver {
     if (seasonId != null) _validateId(seasonId);
     if (episodeId != null) _validateId(episodeId);
     final deadline = _deadline(context);
+    _lastFailure = null;
     for (final region in _orderedRegions()) {
       final parameters = <String, String>{
         'season_id': ?seasonId,
@@ -130,6 +141,7 @@ final class PgcResolver {
           if (error.category == ApiFailureCategory.cancelled) rethrow;
           // A refused, malformed or unreachable candidate does not erase the
           // official error; the remaining paths and regions may still work.
+          _lastFailure = error;
         }
       }
     }
@@ -145,6 +157,7 @@ final class PgcResolver {
     _validateId(episodeId);
     if (qn < 1 || qn > 30000) throw ArgumentError.value(qn, 'qn');
     final deadline = _deadline(context);
+    _lastFailure = null;
     for (final region in _orderedRegions()) {
       // These are the anonymous parameters used by BBZQ's resolver replay.
       // In particular, do not add access_key or copy the Web Cookie header.
@@ -176,6 +189,7 @@ final class PgcResolver {
           return info;
         } on ApiFailure catch (error) {
           if (error.category == ApiFailureCategory.cancelled) rethrow;
+          _lastFailure = error;
         }
       }
     }
@@ -248,7 +262,10 @@ final class PgcResolver {
     if (code != 0) {
       throw ApiFailure(
         switch (code) {
-          -101 || -111 || -400 => ApiFailureCategory.authentication,
+          // 401 is what some public resolvers answer when they insist on an
+          // access_key; the client never sends credentials, so treat it as an
+          // authentication refusal instead of an unknown failure.
+          -101 || -111 || -400 || 401 => ApiFailureCategory.authentication,
           -403 ||
           -404 ||
           -10403 ||

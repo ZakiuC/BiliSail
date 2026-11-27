@@ -141,6 +141,7 @@ import '../features/settings/data/installed_app_version.dart';
 import '../features/settings/data/sqlite_update_check_store.dart';
 import '../features/settings/application/system_fonts_controller.dart';
 import '../features/settings/data/sqlite_settings_repository.dart';
+import '../features/settings/data/bili_api_pgc_resolver_health.dart';
 import 'platform_defaults.dart';
 import '../features/playback/application/playback_viewers_controller.dart';
 import '../features/playback/application/casting_controller.dart';
@@ -315,10 +316,6 @@ class AppDependencies {
           PgcResolverRegion.hk: Uri.parse(value.pgcResolverHk),
         if (value.pgcResolverTw.isNotEmpty)
           PgcResolverRegion.tw: Uri.parse(value.pgcResolverTw),
-        if (value.pgcResolverSea.isNotEmpty)
-          PgcResolverRegion.sea: Uri.parse(value.pgcResolverSea),
-        if (value.pgcResolverCn.isNotEmpty)
-          PgcResolverRegion.cn: Uri.parse(value.pgcResolverCn),
       };
       if (servers.isEmpty) return null;
       return PgcResolver(
@@ -584,6 +581,11 @@ class AppDependencies {
     return ProviderScope(
       overrides: [
         logExportRepositoryProvider.overrideWithValue(logExports),
+        pgcResolverHealthProvider.overrideWithValue(
+          // Shares the anonymous transport; PgcResolver never closes borrowed
+          // transports, so leaving it open is safe.
+          BiliApiPgcResolverHealth(transport: () => sponsorTransport),
+        ),
         commentVideoLinkRepositoryProvider.overrideWithValue(
           PublicCommentVideoLinkRepository(api, requests),
         ),

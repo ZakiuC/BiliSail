@@ -151,8 +151,6 @@ final class AppSettings {
     this.pgcResolverEnabled = false,
     this.pgcResolverHk = '',
     this.pgcResolverTw = '',
-    this.pgcResolverSea = '',
-    this.pgcResolverCn = '',
     this.pgcResolverDefaultRegion = '',
     this.mediaCdn = MediaCdnPreference.automatic,
     this.videoDecoding = VideoDecodingPreference.automatic,
@@ -264,8 +262,6 @@ final class AppSettings {
        pgcResolverEnabled = false,
        pgcResolverHk = '',
        pgcResolverTw = '',
-       pgcResolverSea = '',
-       pgcResolverCn = '',
        pgcResolverDefaultRegion = '',
        mediaCdn = MediaCdnPreference.automatic,
        videoDecoding = VideoDecodingPreference.automatic,
@@ -381,8 +377,6 @@ final class AppSettings {
   final bool pgcResolverEnabled;
   final String pgcResolverHk;
   final String pgcResolverTw;
-  final String pgcResolverSea;
-  final String pgcResolverCn;
   final String pgcResolverDefaultRegion;
   final MediaCdnPreference mediaCdn;
   final VideoDecodingPreference videoDecoding;
@@ -498,8 +492,6 @@ final class AppSettings {
     bool? pgcResolverEnabled,
     String? pgcResolverHk,
     String? pgcResolverTw,
-    String? pgcResolverSea,
-    String? pgcResolverCn,
     String? pgcResolverDefaultRegion,
     MediaCdnPreference? mediaCdn,
     VideoDecodingPreference? videoDecoding,
@@ -623,8 +615,6 @@ final class AppSettings {
     pgcResolverEnabled: pgcResolverEnabled ?? this.pgcResolverEnabled,
     pgcResolverHk: pgcResolverHk ?? this.pgcResolverHk,
     pgcResolverTw: pgcResolverTw ?? this.pgcResolverTw,
-    pgcResolverSea: pgcResolverSea ?? this.pgcResolverSea,
-    pgcResolverCn: pgcResolverCn ?? this.pgcResolverCn,
     pgcResolverDefaultRegion:
         pgcResolverDefaultRegion ?? this.pgcResolverDefaultRegion,
     mediaCdn: mediaCdn ?? this.mediaCdn,
@@ -743,10 +733,8 @@ final class AppSettings {
       danmakuSystemFontFamily: family(danmakuSystemFontFamily),
       pgcResolverHk: resolverUrl(pgcResolverHk),
       pgcResolverTw: resolverUrl(pgcResolverTw),
-      pgcResolverSea: resolverUrl(pgcResolverSea),
-      pgcResolverCn: resolverUrl(pgcResolverCn),
       pgcResolverDefaultRegion:
-          const {'', 'hk', 'tw', 'sea', 'cn'}.contains(pgcResolverDefaultRegion)
+          const {'', 'hk', 'tw'}.contains(pgcResolverDefaultRegion)
           ? pgcResolverDefaultRegion
           : '',
       preferredQuality: supportedQualities.contains(preferredQuality)

@@ -686,3 +686,17 @@ Flutter 3.50.0 的 Windows x64 Profile 对照使用 RTX 4070 Ti SUPER、165 Hz �
 macOS Runner 在 [Info.plist](../macos/Runner/Info.plist) 中将 `FLTEnableImpeller` 设为布尔值 `false`，主窗口和独立播放窗口共用 Skia（Metal）。Debug、Profile 和 Release 均使用这份配置。重新构建后，从动态打开视频和恢复播放窗口尺寸的行为仍需在 Mac 上复测。
 
 Linux 按用户选择同样使用 Skia。[GTK Runner](../linux/runner/my_application.cc) 在创建 Flutter 视图前调用 `fl_dart_project_set_enable_impeller(project, FALSE)`。AppImage 和 Flatpak 均使用此 Runner。
+
+## D101：推荐解析服务器只收录实测通过的地址
+
+**决定（2026-11-27）** 番剧地区解锁的推荐列表是编译期常量，只收录同时通过匿名详情与取流两次请求的地址，
+并在条目上记录适用地区与实测日期；不把社区名单直接内置，也不写入设置快照。
+
+理由：公共解析服务器大量失效、被网络阻断或要求 `access_key`，名单本身无法说明「能不能播」。
+推荐项为此只做地址预填，真正的判定交给与播放链路相同的 `PgcResolver`：设置项「检测」以同一组路径、
+参数和匿名请求头发起请求，用 `lastFailure` 解释失败类别（例如 `authentication` 对应要求凭据、
+`permission` 对应地区拒绝），并为样例剧集准备后备项，避免授权变化被误判为服务器故障。
+
+推荐项只填入真实覆盖的地区：`bili.lli.cx` 只验证了港澳与台湾，东南亚和大陆两栏保持原值。
+清单不进入 `preferences.v1`，快照版本与 schema 不变。实测分类与未验证边界见
+[推荐解析服务器实测](validation/pgc-resolver-presets-2026-11-27.md)。

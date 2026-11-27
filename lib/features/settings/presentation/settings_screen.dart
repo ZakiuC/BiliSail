@@ -16,6 +16,7 @@ import '../../../shared/ui/app_notice.dart';
 import '../../../shared/ui/app_dialog.dart';
 import '../../../shared/ui/playback_rate_options_setting.dart';
 import '../application/settings_controller.dart';
+import '../data/bili_api_pgc_resolver_health.dart';
 import '../application/app_update_controller.dart';
 import '../domain/app_update.dart';
 import '../../../domain/responsive_layout_settings.dart';
@@ -885,8 +886,6 @@ final class _SettingsCategoryPageState
                             servers: {
                               'hk': s.pgcResolverHk,
                               'tw': s.pgcResolverTw,
-                              'sea': s.pgcResolverSea,
-                              'cn': s.pgcResolverCn,
                             },
                             defaultRegion: s.pgcResolverDefaultRegion,
                             onEnabledChanged: (value) => _save(
@@ -898,6 +897,10 @@ final class _SettingsCategoryPageState
                                 value,
                               ),
                             ),
+                            onApplyPreset: (servers) => _save(
+                              () => controller.setPgcResolverServers(servers),
+                            ),
+                            healthChecker: ref.watch(pgcResolverHealthProvider),
                             onDefaultRegionChanged: (value) => _save(
                               () =>
                                   controller.setPgcResolverDefaultRegion(value),

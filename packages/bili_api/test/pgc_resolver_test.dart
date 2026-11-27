@@ -348,6 +348,37 @@ void main() {
       }
     });
 
+    test('a successful call clears the diagnostic failure', () async {
+      final transport = _Transport((request) => _seasonReply(title: 'Ok'));
+      final resolver = _resolver(transport);
+      expect(await resolver.resolveSeason(seasonId: '42'), isNotNull);
+      expect(resolver.lastFailure, isNull);
+    });
+
+    test(
+      'a swallowed candidate failure stays available for diagnostics',
+      () async {
+        final transport = _Transport((_) => _refusal(-10403));
+        final resolver = _resolver(transport);
+        expect(await resolver.resolveSeason(seasonId: '42'), isNull);
+        final failure = resolver.lastFailure;
+        expect(failure?.category, ApiFailureCategory.permission);
+        expect(failure?.businessCode, -10403);
+
+        expect(await resolver.resolvePlayInfo('9'), isNull);
+        expect(resolver.lastFailure?.category, ApiFailureCategory.permission);
+      },
+    );
+
+    test('a positive 401 counts as an authentication refusal', () async {
+      final transport = _Transport(
+        (_) => _json({'code': 401, 'message': 'access_key required'}),
+      );
+      final resolver = _resolver(transport);
+      expect(await resolver.resolvePlayInfo('9'), isNull);
+      expect(resolver.lastFailure?.category, ApiFailureCategory.authentication);
+    });
+
     test('without a default region detail keeps hk tw sea cn order', () async {
       final transport = _Transport((_) => _refusal());
       final resolver = _resolver(

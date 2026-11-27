@@ -335,9 +335,7 @@ void main() {
         pgcResolverEnabled: true,
         pgcResolverHk: 'https://hk.example.com/',
         pgcResolverTw: 'https://tw.example.com',
-        pgcResolverSea: 'http://sea.example.com:8080',
-        pgcResolverCn: 'not a url',
-        pgcResolverDefaultRegion: 'sea',
+        pgcResolverDefaultRegion: 'tw',
       );
       await repository.save(enhanced);
       final enhancedReload = await SqliteSettingsRepository(database).load();
@@ -348,9 +346,7 @@ void main() {
       expect(enhancedReload.pgcResolverEnabled, isTrue);
       expect(enhancedReload.pgcResolverHk, 'https://hk.example.com');
       expect(enhancedReload.pgcResolverTw, 'https://tw.example.com');
-      expect(enhancedReload.pgcResolverSea, 'http://sea.example.com:8080');
-      expect(enhancedReload.pgcResolverCn, isEmpty);
-      expect(enhancedReload.pgcResolverDefaultRegion, 'sea');
+      expect(enhancedReload.pgcResolverDefaultRegion, 'tw');
       expect(enhancedReload.copyWith().unlockHighestBitrate, isTrue);
       final snapshot = jsonDecode(
         (await database.readSetting('preferences.v1'))!,
@@ -362,7 +358,7 @@ void main() {
       expect(snapshot['fakeWifi'], isTrue);
       expect(snapshot['pgcResolverEnabled'], isTrue);
       expect(snapshot['pgcResolverHk'], 'https://hk.example.com');
-      expect(snapshot['pgcResolverDefaultRegion'], 'sea');
+      expect(snapshot['pgcResolverDefaultRegion'], 'tw');
       expect(snapshot['schemaVersion'], 57);
       await database.writeSetting(
         'preferences.v1',

@@ -627,6 +627,38 @@ void main() {
       expect(reloaded.sponsorBlockMode, SponsorBlockMode.manual);
     },
   );
+
+  test(
+    'a recommended resolver preset enables the feature and keeps others',
+    () async {
+      final repository = _DeferredSettingsRepository();
+      final container = ProviderContainer(
+        overrides: [settingsRepositoryProvider.overrideWithValue(repository)],
+      );
+      addTearDown(container.dispose);
+      await container.read(settingsControllerProvider.future);
+      final controller = container.read(settingsControllerProvider.notifier);
+
+      final write = controller.setPgcResolverServers({
+        'hk': 'https://bili.example.com',
+        'tw': 'https://bili.example.com/',
+      });
+      await Future<void>.delayed(Duration.zero);
+      repository.completeNext();
+      await write;
+
+      expect(repository.stored.pgcResolverEnabled, isTrue);
+      expect(repository.stored.pgcResolverHk, 'https://bili.example.com');
+      // Trailing slashes are removed by normalization before persisting.
+      expect(repository.stored.pgcResolverTw, 'https://bili.example.com');
+
+      expect(
+        () =>
+            controller.setPgcResolverServers({'mars': 'https://x.example.com'}),
+        throwsArgumentError,
+      );
+    },
+  );
 }
 
 final class _DeferredSettingsRepository implements SettingsRepository {

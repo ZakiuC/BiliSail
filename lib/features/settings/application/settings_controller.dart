@@ -250,21 +250,39 @@ final class SettingsController extends AsyncNotifier<AppSettings> {
   Future<void> setPgcResolverEnabled(bool value) =>
       update((current) => current.copyWith(pgcResolverEnabled: value));
   Future<void> setPgcResolverServer(String region, String value) {
-    if (!const {'hk', 'tw', 'sea', 'cn'}.contains(region)) {
+    if (!const {'hk', 'tw'}.contains(region)) {
       throw ArgumentError.value(region, 'region');
     }
     return update(
       (current) => switch (region) {
         'hk' => current.copyWith(pgcResolverHk: value),
-        'tw' => current.copyWith(pgcResolverTw: value),
-        'sea' => current.copyWith(pgcResolverSea: value),
-        _ => current.copyWith(pgcResolverCn: value),
+        _ => current.copyWith(pgcResolverTw: value),
       },
     );
   }
 
+  /// Applies several regions at once and enables the feature.
+  ///
+  /// Used by the recommended-server picker so one action cannot leave the
+  /// switch enabled with only part of a preset written. Regions absent from
+  /// [servers] keep their previous value.
+  Future<void> setPgcResolverServers(Map<String, String> servers) {
+    for (final region in servers.keys) {
+      if (!const {'hk', 'tw'}.contains(region)) {
+        throw ArgumentError.value(region, 'region');
+      }
+    }
+    return update(
+      (current) => current.copyWith(
+        pgcResolverEnabled: true,
+        pgcResolverHk: servers['hk'],
+        pgcResolverTw: servers['tw'],
+      ),
+    );
+  }
+
   Future<void> setPgcResolverDefaultRegion(String value) {
-    if (!const {'', 'hk', 'tw', 'sea', 'cn'}.contains(value)) {
+    if (!const {'', 'hk', 'tw'}.contains(value)) {
       throw ArgumentError.value(value, 'value');
     }
     return update(
